@@ -1,53 +1,67 @@
-use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-mod ast_visitor;
-mod checker;
+mod ast;
+mod evaluator;
 mod package;
-mod sourcefile;
+mod source;
 mod utils;
+mod visitors;
 
-fn analyse(path: &PathBuf) {
-    match sourcefile::SourceFile::load(path) {
-        Ok(sf) => {
-            println!("Path: {}", &sf.source_path.as_os_str().to_str().unwrap());
-            //println!("Source: {}", &sf.source);
+use package::Package;
 
-            println!("Imports:\n{}", sf.display_list(&sf.imports));
-            println!("Functions:\n{}", sf.display_functions());
+use crate::evaluator::RuleManager;
+use clap::Parser;
 
-            let checker = checker::Checker::new();
-            let check_result = checker.check(&sf);
-            println!("{:?}", check_result);
-        }
-        Err(err) => {
-            println!("Error: {}", err);
-        }
-    }
+#[macro_use]
+extern crate log;
+
+fn analyse_package(path: &Path, rules: &RuleManager) {
+    let mut package = Package::new(path, rules);
+    package.analyse();
 }
 
-#[allow(unused)]
-fn analyse_all() {
-    let paths = fs::read_dir("../ast_experiment/tests").unwrap();
-
-    for path in paths {
-        let p = path.expect("could not get path from direntry").path();
-        if p.is_file() {
-            let abs = p
-                .canonicalize()
-                .expect("could not convert path to absolute path");
-            analyse(&abs);
-        }
-    }
+fn analyse_single(path: &str, rm: &RuleManager) {
+    let path = PathBuf::from_str(path).unwrap();
+    let package = Package::new(&path, &rm);
+    package.analyse_single(&path);
 }
 
-fn analyse_single(path: &str) {
-    let p = PathBuf::from_str(path).unwrap();
-    analyse(&p);
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Path to a single Python file we want to analyse
+    #[clap(short, long)]
+    file: Option<String>,
+
+    /// The path to the package to analyse
+    #[clap(short, long)]
+    package: Option<String>,
 }
 
 fn main() {
-    //analyse_all()
-    analyse_single("../ast_experiment/tests/test-7.py");
+    pretty_env_logger::init();
+    let args = Args::parse();
+    let rm = RuleManager::new();
+
+    match args.file {
+        Some(path) => {
+            trace!("Analysing single file: '{}'", &path.as_str());
+            analyse_single(path.as_str(), &rm);
+        }
+        None => match args.package {
+            Some(package) => {
+                trace!("Analysing package: '{}'", &package.as_str());
+                let pkg = Package::locate_package(package.as_str());
+                if let Some(path) = pkg {
+                    debug!("Detected package: '{:?}'", &path);
+                    analyse_package(&path, &rm);
+                }
+            }
+            None => {
+                // TODO: Rewrite this to use the clap App functionality so we can control required arguments.
+                eprintln!("Error: Either a file or a package has to be supplied as arguments.");
+            }
+        },
+    }
 }

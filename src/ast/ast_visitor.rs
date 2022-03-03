@@ -6,21 +6,22 @@ use rustpython_parser::ast::{
 #[allow(unused_variables)]
 pub trait AstVisitor {
     fn visit_return(&mut self, value: &Option<Located<ExpressionType>>) {}
-    fn visit_import(&mut self, names: &Vec<ImportSymbol>) {}
+    fn visit_import(&mut self, stmt: &Located<StatementType>, names: &[ImportSymbol]) {}
 
     fn visit_import_from(
         &mut self,
+        stmt: &Located<StatementType>,
         level: &usize,
         module: &Option<String>,
-        names: &Vec<ImportSymbol>,
+        names: &[ImportSymbol],
     ) {
     }
 
     fn visit_call(
         &mut self,
-        function: &Box<Located<ExpressionType>>,
-        args: &Vec<Located<ExpressionType>>,
-        keywords: &Vec<Keyword>,
+        function: &Located<ExpressionType>,
+        args: &[Located<ExpressionType>],
+        keywords: &[Keyword],
     ) {
         self.walk_expression(function);
         self.walk_expressions(args);
@@ -31,7 +32,7 @@ pub trait AstVisitor {
 
     fn visit_assign(
         &mut self,
-        target: &Vec<Located<ExpressionType>>,
+        target: &[Located<ExpressionType>],
         value: &Located<ExpressionType>,
     ) {
         self.walk_expressions(target);
@@ -41,10 +42,10 @@ pub trait AstVisitor {
     fn visit_function_def(
         &mut self,
         is_async: &bool,
-        name: &String,
-        args: &Box<Parameters>,
-        body: &Vec<Located<StatementType>>,
-        decorator_list: &Vec<Located<ExpressionType>>,
+        name: &str,
+        args: &Parameters,
+        body: &[Located<StatementType>],
+        decorator_list: &[Located<ExpressionType>],
         returns: &Option<Located<ExpressionType>>,
     ) {
         self.walk_statements(body);
@@ -54,12 +55,19 @@ pub trait AstVisitor {
 
     fn visit_class_def(
         &mut self,
-        name: &String,
-        body: &Vec<Located<StatementType>>,
-        bases: &Vec<Located<ExpressionType>>,
-        keywords: &Vec<Keyword>,
-        decorator_list: &Vec<Located<ExpressionType>>,
+        name: &str,
+        body: &[Located<StatementType>],
+        bases: &[Located<ExpressionType>],
+        keywords: &[Keyword],
+        decorator_list: &[Located<ExpressionType>],
     ) {
+        self.walk_statements(body);
+        self.walk_expressions(bases);
+        // TODO: handle keyword name
+        keywords
+            .iter()
+            .for_each(|kw| self.walk_expression(&kw.value));
+        self.walk_expressions(decorator_list);
     }
 
     // In case you want to override it
@@ -78,15 +86,15 @@ pub trait AstVisitor {
         self.walk_opt_expression(msg);
     }
 
-    fn visit_delete(&mut self, targets: &Vec<Located<ExpressionType>>) {
+    fn visit_delete(&mut self, targets: &[Located<ExpressionType>]) {
         self.walk_expressions(targets);
     }
 
     fn visit_aug_assign(
         &mut self,
-        target: &Box<Located<ExpressionType>>,
+        target: &Located<ExpressionType>,
         op: &Operator,
-        value: &Box<Located<ExpressionType>>,
+        value: &Located<ExpressionType>,
     ) {
         self.walk_expression(target);
         self.walk_expression(value);
@@ -94,8 +102,8 @@ pub trait AstVisitor {
 
     fn visit_ann_assign(
         &mut self,
-        target: &Box<Located<ExpressionType>>,
-        annotation: &Box<Located<ExpressionType>>,
+        target: &Located<ExpressionType>,
+        annotation: &Located<ExpressionType>,
         value: &Option<Located<ExpressionType>>,
     ) {
         self.walk_expression(target);
@@ -103,13 +111,13 @@ pub trait AstVisitor {
         self.walk_opt_expression(value);
     }
 
-    fn visit_global(&mut self, names: &Vec<String>) {}
-    fn visit_nonlocal(&mut self, names: &Vec<String>) {}
+    fn visit_global(&mut self, names: &[String]) {}
+    fn visit_nonlocal(&mut self, names: &[String]) {}
 
     fn visit_if(
         &mut self,
         test: &Located<ExpressionType>,
-        body: &Vec<Located<StatementType>>,
+        body: &[Located<StatementType>],
         orelse: &Option<Vec<Located<StatementType>>>,
     ) {
         self.walk_expression(test);
@@ -120,7 +128,7 @@ pub trait AstVisitor {
     fn visit_while(
         &mut self,
         test: &Located<ExpressionType>,
-        body: &Vec<Located<StatementType>>,
+        body: &[Located<StatementType>],
         orelse: &Option<Vec<Located<StatementType>>>,
     ) {
         self.walk_expression(test);
@@ -128,22 +136,20 @@ pub trait AstVisitor {
         self.walk_opt_statements(orelse);
     }
 
-    fn visit_with(
-        &mut self,
-        is_async: &bool,
-        items: &Vec<WithItem>,
-        body: &Vec<Located<StatementType>>,
-    ) {
-        // TODO: items
+    fn visit_with(&mut self, is_async: &bool, items: &[WithItem], body: &[Located<StatementType>]) {
+        items.iter().for_each(|wi| {
+            self.walk_expression(&wi.context_expr);
+            self.walk_opt_expression(&wi.optional_vars);
+        });
         self.walk_statements(body);
     }
 
     fn visit_for(
         &mut self,
         is_async: &bool,
-        target: &Box<Located<ExpressionType>>,
-        iter: &Box<Located<ExpressionType>>,
-        body: &Vec<Located<StatementType>>,
+        target: &Located<ExpressionType>,
+        iter: &Located<ExpressionType>,
+        body: &[Located<StatementType>],
         orelse: &Option<Vec<Located<StatementType>>>,
     ) {
         self.walk_expression(target);
@@ -163,13 +169,19 @@ pub trait AstVisitor {
 
     fn visit_try(
         &mut self,
-        body: &Vec<Located<StatementType>>,
-        handlers: &Vec<ExceptHandler>,
+        body: &[Located<StatementType>],
+        handlers: &[ExceptHandler],
         orelse: &Option<Vec<Located<StatementType>>>,
         finalbody: &Option<Vec<Located<StatementType>>>,
     ) {
         self.walk_statements(body);
-        // TODO: handlers
+
+        handlers.iter().for_each(|e| {
+            self.walk_opt_expression(&e.typ);
+            // TODO handle name
+            self.walk_statements(&e.body);
+        });
+
         self.walk_opt_statements(orelse);
         self.walk_opt_statements(finalbody);
     }
@@ -202,11 +214,11 @@ pub trait AstVisitor {
         }
     }
 
-    fn walk_expressions(&mut self, exprs: &Vec<Located<ExpressionType>>) {
+    fn walk_expressions(&mut self, exprs: &[Located<ExpressionType>]) {
         exprs.iter().for_each(|expr| self.walk_expression(expr));
     }
 
-    fn walk_statements(&mut self, stmts: &Vec<Located<StatementType>>) {
+    fn walk_statements(&mut self, stmts: &[Located<StatementType>]) {
         stmts.iter().for_each(|stmt| self.walk_statement(stmt));
     }
 
@@ -255,12 +267,12 @@ pub trait AstVisitor {
             StatementType::Break => self.visit_break(),
             StatementType::Continue => self.visit_continue(),
             StatementType::Return { value } => self.visit_return(value),
-            StatementType::Import { names } => self.visit_import(names),
+            StatementType::Import { names } => self.visit_import(stmt, names),
             StatementType::ImportFrom {
                 level,
                 module,
                 names,
-            } => self.visit_import_from(level, module, names),
+            } => self.visit_import_from(stmt, level, module, names),
             StatementType::Pass => self.visit_pass(),
             StatementType::Assert { test, msg } => self.visit_assert(test, msg),
             StatementType::Delete { targets } => self.visit_delete(targets),
@@ -319,7 +331,7 @@ pub trait AstVisitor {
 pub struct AstWalker;
 
 impl AstWalker {
-    pub fn visit<T>(visitor: &mut T, statements: &Vec<Located<StatementType>>)
+    pub fn visit<T>(visitor: &mut T, statements: &[Located<StatementType>])
     where
         T: AstVisitor,
     {
