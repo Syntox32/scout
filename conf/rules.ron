@@ -1,0 +1,120 @@
+///
+///
+/// Rules are defined as follows: 
+///     ```
+///     Module(Functionality, Identifier, Name (optional), Description (optional))
+///     ```
+/// 
+/// You can choose between Module or Function.
+///
+///
+
+([
+    ( name: "Basic module rules", threshold: 0.40, rules: [
+        // compression
+        Module(Compression, "zlib", None, None),
+        Module(Compression, "gzip", None, None),
+        Module(Compression, "tarfile", None, None),
+        // encoding
+        Module(Encoding, "base64", None, None),
+        Module(Encoding, "binascii", None, None),
+        // hashing, signing, encryption
+        Module(Encryption, "hashlib", None, None),
+        Module(Encryption, "hashes", None, None),
+        Module(Encryption, "Crypto.Util.Padding", None, None),
+        Module(Encryption, "Crypto.Cipher", None, None),
+        // networking
+        Module(Network, "socket", None, None),
+        Module(Network, "urllib2", None, None),
+        Module(Network, "urllib", None, None),
+        Module(Network, "paramiko", None, None),
+        Module(Network, "ftplib", None, None),
+        Module(Network, "socketserver", None, None),
+        Module(Network, "httplib", None, None),
+        Module(Network, "scapy", None, None),
+        // processes
+        Module(Process, "subprocess", None, None),
+        Module(Process, "commands", None, None),
+        Module(Process, "pty", None, None),
+        Module(Process, "threading", None, None),
+        Module(Process, "select", None, None),
+        Module(Process, "multiprocessing", None, None),
+        Module(Process, "setproctitle", None, None),
+        Module(Process, "shutil", None, None),
+        Module(Process, "fcntl", None, None),
+        // filesyten
+        Module(FileSystem, "io", None, None),
+        // System
+        Module(System, "ctypes", None, None),
+        Module(System, "platform", None, None),
+        Module(System, "winreg", None, None),
+        Module(System, "psutil", None, None),
+        Module(System, "wmi", None, None),
+        Module(System, "pynput", None, None),
+        Module(System, "pwd", None, None),
+        Module(System, "os", None, None),
+    ]),
+    ( name: "Misc. suspicious rules", threshold: 0.20, rules: [
+       Module(System, "importlib", None, None),
+       Module(System, "marshal", None, None),
+       Function(System, "marshal.load", None, None),
+       Function(System, "marshal.loads", None, None),
+    ]),
+    ( name: "Basic function rules", threshold: 0.20, rules: [
+        // compression
+
+        // encoding
+        Function(Encoding, "b64decode", None, None),
+        Function(Encoding, "b64encode", None, None),
+        Function(Encoding, "EncodeAES", None, None),
+        Function(Encoding, "DecodeAES", None, None),
+        Function(Encoding, "encode_base64", None, None),
+        // Function(Encoding, "OAEP", None, None),
+        // Function(Encoding, "MGF1", None, None),
+
+        // hashing, signing, encryption
+        Function(Encryption, "encrypt", None, None),
+        Function(Encryption, "decrypt", None, None),
+        Function(Encryption, "AESGCM", None, None),
+        Function(Encryption, "md5", None, None),
+        Function(Encryption, "rc4", None, None),
+        Function(Encryption, "SHA256", None, None),
+        Function(Encryption, "sha1", None, None),
+        // networking
+        Function(Network, "socket", None, None),
+        Function(Network, "bind", None, None),
+        Function(Network, "setsockopt", None, None),
+        Function(Network, "gethostbyname", None, None),
+        Function(Network, "gethostname", None, None),
+        Function(Network, "SSHClient", None, None),
+        // processes
+        Function(Process, "spawn", None, None),
+        Function(Process, "Popen", None, None),
+        Function(Process, "communicate", None, None),
+        Function(Process, "daemon", None, None),
+        Function(Process, "fork", None, None),
+        Function(Process, "ThreadingTCPServer", None, None),
+        Function(Process, "ThreadingUDPServer", None, None),
+        Function(Process, "setproctitle", None, None),
+        Function(Process, "CreateThread", None, None),
+        // filesyten
+        Function(FileSystem, "open", None, None),
+        Function(FileSystem, "StringIO", None, None),
+        Function(FileSystem, "BytesIO", None, None),
+        // System
+        Function(System, "exec", None, None),
+        Function(System, "execv", None, None),
+        Function(System, "execvp", None, None),
+        Function(System, "execfile", None, None),
+        Function(System, "storbinary", None, None),
+        Function(System, "system", None, None),
+        // Function(Encoding, "getopt", None, None),
+        // Function(Encoding, "getoutput", None, None),
+        // Function(Encoding, "tcsetattr", None, None),
+        Function(System, "command", None, None),
+        Function(System, "exec_command", None, None),
+        Function(System, "check_output", None, None),
+        Function(System, "VirtualAlloc", None, None),
+        Function(System, "sysinfo", None, None),
+    ]),
+])
