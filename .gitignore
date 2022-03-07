@@ -1,4 +1,4 @@
-/target
+target/
 
 # used for debug purposes
 conf/plot.json
