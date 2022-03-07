@@ -1,26 +1,20 @@
 use super::Functionality;
 use rustpython_parser::location::Location;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "reason")]
 pub enum BulletinReason {
     SuspiciousImport,
     SuspiciousFunction,
     ImportInsideFunction,
 }
 
-#[derive(Debug)]
-pub enum BulletinSeverity {
-    // FixNow,
-    Suspicious,
-    Informative,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Bulletin {
     pub identifier: String,
-    pub location: Location,
-    #[allow(unused)]
-    severity: BulletinSeverity,
+    line: usize,
+    col: usize,
     reason: BulletinReason,
     pub functionality: Option<Functionality>,
     pub threshold: f64,
@@ -32,7 +26,6 @@ impl Bulletin {
     pub fn new(
         identifier: String,
         reason: BulletinReason,
-        severity: BulletinSeverity,
         location: Location,
         functionality: Option<Functionality>,
         threshold: f64,
@@ -40,19 +33,19 @@ impl Bulletin {
         Self {
             identifier,
             reason,
-            location,
-            severity,
+            col: location.column(),
+            line: location.row(),
             functionality,
             threshold,
         }
     }
 
     pub fn line(&self) -> usize {
-        self.location.row()
+        self.line
     }
 
     pub fn col(&self) -> usize {
-        self.location.column()
+        self.col
     }
 
     pub fn reason(&self) -> String {

@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
+use ast_walker::AstVisitor;
 use rustpython_parser::{
     ast::{ExpressionType, ImportSymbol, Located, Parameters, StatementType},
     location::Location,
 };
-
-use crate::ast::AstVisitor;
 
 #[derive(Debug)]
 pub struct ImportEntry {
@@ -24,14 +23,22 @@ pub struct ImportVisitor {
 
 impl ImportVisitor {
     pub fn new() -> Self {
-        let map: HashMap<String, ImportEntry> = HashMap::new();
-        let set: HashMap<String, String> = HashMap::new();
+        let imports: HashMap<String, ImportEntry> = HashMap::new();
+        let aliases: HashMap<String, String> = HashMap::new();
 
         ImportVisitor {
-            imports: map,
-            aliases: set,
+            imports,
+            aliases,
             call_context: vec![String::from("global")],
         }
+    }
+
+    pub fn get_imports(&self) -> &HashMap<String, ImportEntry> {
+        &self.imports
+    }
+
+    pub fn get_aliases(&self) -> &HashMap<String, String> {
+        &self.aliases
     }
 
     pub fn set_call_context(&mut self, ctx: String) {
@@ -50,7 +57,7 @@ impl ImportVisitor {
     pub fn has_import(&self, contains: &str) -> bool {
         // self.imports.contains_key(&contains.to_owned())
         for key in self.imports.keys() {
-            if key.starts_with(contains) {
+            if key.as_str() == contains {
                 return true;
             }
         }

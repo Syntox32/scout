@@ -1,0 +1,25 @@
+[package]
+name = "scout"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = { version = "0.4.0" }
+rustpython-parser = "0.1.2"
+ast_walker = { path = "../ast_walker" }
+
+# serialization
+ron = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+
+# filesystem traversal
+walkdir = "2"
+
+# used for fixing parsing errors
+regex = "1"
+
+# output
+colored = { version = "2" }

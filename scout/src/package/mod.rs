@@ -1,5 +1,5 @@
 use crate::{
-    evaluator::{Evaluator, RuleManager},
+    evaluator::{Evaluator, EvaluatorResult, RuleManager},
     source::SourceFile,
     utils::collect_files,
 };
@@ -18,22 +18,23 @@ pub enum PackageType {
 
 pub struct Package<'a> {
     pub path: PathBuf,
-    pub sources: Vec<SourceFile>,
     checker: Evaluator<'a>,
+    threshold: f64,
 }
 
 impl<'a> Package<'a> {
-    pub fn new(path: &Path, rules: &'a RuleManager) -> Self {
+    pub fn new(path: &Path, rules: &'a RuleManager, threshold: f64) -> Self {
         Self {
             path: path.to_owned(),
-            sources: vec![],
             checker: Evaluator::new(rules.get_rule_sets()),
+            threshold,
         }
     }
 
-    fn load(&mut self) {
-        trace!("Package loading...");
+    fn get_sources(&self) -> Vec<SourceFile> {
+        trace!("Ackquiring sources...");
         let files = collect_files(&self.path);
+        let mut sources: Vec<SourceFile> = vec![];
         for file in files {
             trace!("Loaded file: {:?}", &file.path().file_name());
             // file.path().ends_with(".py") did not work. maybe it's a bug?
@@ -49,52 +50,79 @@ impl<'a> Package<'a> {
                 let p = file.path().to_path_buf();
 
                 match SourceFile::load(&p) {
-                    Ok(source) => self.sources.push(source),
+                    Ok(source) => sources.push(source),
                     Err(err) => error!(
                         "Parse or load error '{}' in file '{}'",
                         err,
-                        &p.as_path().as_os_str().to_str().unwrap()
+                        p.as_path().as_os_str().to_str().unwrap()
                     ),
                 };
             } else {
                 trace!("file did not end with .py: {:?}", file);
             }
         }
+        sources
     }
 
-    pub fn analyse_single(&self, path: &Path) {
+    pub fn analyse(&mut self) -> Option<Vec<EvaluatorResult>> {
+        // println!("package: analyzing");
+        let sources = self.get_sources();
+        let mut results: Vec<EvaluatorResult> = vec![];
+        for source in sources {
+            let path = &source.get_path().to_owned();
+            if let Some(result) = self.evaluate_source(source) {
+                results.push(result);
+            } else {
+                warn!("Could not evaluate source: {}", path);
+            }
+        }
+        Some(results)
+    }
+
+    pub fn analyse_single(&self, path: &Path) -> Option<EvaluatorResult> {
         match SourceFile::load(&path) {
-            Ok(source) => self.evaluate_source(&source),
-            Err(err) => error!(
-                "Parse or load error '{}' in file '{}'",
-                err,
-                path.as_os_str().to_str().unwrap()
-            ),
-        };
+            Ok(source) => {
+                if let Some(result) = self.evaluate_source(source) {
+                    return Some(result);
+                }
+                None
+            }
+            Err(err) => {
+                error!(
+                    "Parse or load error '{}' in file '{}'",
+                    err,
+                    path.as_os_str().to_str().unwrap()
+                );
+                None
+            }
+        }
     }
 
-    fn evaluate_source(&self, source: &SourceFile) {
-        let eval_result = self.checker.check(source);
-        if !(eval_result.found_anything() && eval_result.any_bulletins_over_threshold()) {
+    fn evaluate_source(&self, source: SourceFile) -> Option<EvaluatorResult> {
+        let mut eval_result = self.checker.check(source);
+        let mut message: String = String::from("");
+        
+        if !(eval_result.found_anything()
+            && eval_result.any_bulletins_over_threshold(self.threshold))
+        {
             trace!(
                 "File was skipped because no bulletins showed: {}",
-                source.get_path()
+                eval_result.source.get_path()
             );
-            return;
+            return None;
         }
 
         eval_result.display_functionality();
         debug!(
             "Functions found in source file: [{}]",
-            source._display_functions()
+            eval_result.source._display_functions()
         );
-        // eval_result.density_evaluator._plot();
         trace!(
-            "Bulletins by hotspots: {:#?}",
+            "Bulletins by hotspots: {:?}",
             eval_result.bulletins_by_hotspot()
         );
 
-        println!("Location: {}", source.get_path());
+        message += format!("Location: {}\n", eval_result.source.get_path()).as_str();
         let mut first = true;
         for (group, hotspot) in eval_result.bulletins_by_hotspot() {
             if first {
@@ -104,7 +132,7 @@ impl<'a> Package<'a> {
             let f = eval_result.get_uniq_functionality(&group);
             debug!("Functionality for group: {:?}", f);
 
-            let hotspot_code: Vec<(usize, &str)> = hotspot.get_code(source);
+            let hotspot_code: Vec<(usize, &str)> = hotspot.get_code(&eval_result.source);
 
             let mut display = false;
             let mut output: Vec<String> = vec![];
@@ -119,7 +147,9 @@ impl<'a> Package<'a> {
 
                 for bulletin in group.iter() {
                     // add one cause its a 0 based index because of enumerate
-                    if bulletin.line() == line && hotspot.peak() >= bulletin.threshold {
+                    if (bulletin.line() == line && hotspot.peak() >= bulletin.threshold)
+                        && hotspot.peak() > self.threshold
+                    {
                         if !display {
                             display = true;
                         }
@@ -151,20 +181,13 @@ impl<'a> Package<'a> {
 
             if display {
                 if !first {
-                    println!("...");
+                    message += "...\n";
                 }
-                println!("{}", output.join("\n"));
+                message += format!("{}", output.join("\n")).as_str();
             }
         }
-    }
-
-    pub fn analyse(&mut self) {
-        // println!("package: analyzing");
-        self.load();
-
-        for source in &self.sources {
-            self.evaluate_source(source);
-        }
+        eval_result.message = message;
+        Some(eval_result)
     }
 
     fn get_package_dir(path: &Path) -> Option<PathBuf> {
@@ -179,18 +202,25 @@ impl<'a> Package<'a> {
     }
 
     fn get_wheel_pkg_name(path: &Path) -> Option<String> {
-        path.file_name()?
-            .to_str()?
-            .split_once('-')
-            .map(|(str_a, _)| str_a.to_lowercase())
+        for dir in fs::read_dir(path).unwrap() {
+            let dir_name = dir.unwrap().path().file_name()?.to_str()?.to_string();
+            if !&dir_name.ends_with("dist-info") {
+                return Some(dir_name);
+            }
+        }
+        None
+        // path.file_name()?
+        //     .to_str()?
+        //     .split_once('-')
+        //     .map(|(str_a, _)| str_a.to_lowercase())
     }
 
     pub fn locate_package(path: &str) -> Option<Box<Path>> {
         let p = PathBuf::from_str(path).unwrap();
-        println!("Analysing package: {:?}", &p);
+        debug!("Locating package: {:?}", &p);
 
         let pkg_path = Package::get_package_dir(&p)?;
-        println!("pkg path: {}", &pkg_path.as_os_str().to_str().unwrap());
+        // println!("pkg path: {}", &pkg_path.as_os_str().to_str().unwrap());
         Some(Box::from(pkg_path))
     }
 
@@ -229,9 +259,9 @@ mod tests {
 
     #[test]
     fn test_detect_package() {
-        let test_wheel = "../dataset/top/unpacked/Flask-2.0.2-py3-none-any.whl";
-        let test_zip = "../dataset/top/unpacked/termcolor-1.1.0.tar.gz/termcolor-1.1.0";
-        let test_none = "../dataset/top/unpacked/termcolor-1.1.0.tar.gz";
+        let test_wheel = "../../dataset/top/unpacked/Flask-2.0.2-py3-none-any.whl";
+        let test_zip = "../../dataset/top/unpacked/termcolor-1.1.0.tar.gz/termcolor-1.1.0";
+        let test_none = "../../dataset/top/unpacked/termcolor-1.1.0.tar.gz";
 
         assert_eq!(
             Package::detect_package_type(test_wheel),
@@ -247,7 +277,7 @@ mod tests {
     #[test]
     fn test_get_wheel_package_name() {
         let test_wheel =
-            PathBuf::from_str("../dataset/top/unpacked/Flask-2.0.2-py3-none-any.whl").unwrap();
+            PathBuf::from_str("../../dataset/top/unpacked/Flask-2.0.2-py3-none-any.whl").unwrap();
         assert_eq!(
             Package::get_wheel_pkg_name(&test_wheel),
             Some(String::from("flask"))

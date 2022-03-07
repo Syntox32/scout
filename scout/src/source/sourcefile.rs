@@ -1,3 +1,4 @@
+use ast_walker::{AstVisitor, AstWalker};
 use regex::Regex;
 use rustpython_parser::ast::{Program, Statement};
 use rustpython_parser::error::ParseError;
@@ -5,7 +6,6 @@ use rustpython_parser::parser;
 use std::io::{self, Error};
 use std::path::{Path, PathBuf};
 
-use crate::ast::{AstVisitor, AstWalker};
 use crate::utils;
 use crate::visitors::{CallVisitor, ImportVisitor};
 
@@ -116,13 +116,19 @@ impl SourceFile {
         };
         let loc = source.lines().count().to_owned();
 
+        let import_visitor = SourceFile::visit(&statements, ImportVisitor::new());
+        let mut function_visitor = SourceFile::visit(&statements, CallVisitor::new());
+
+        function_visitor
+            .resolve_imports(import_visitor.get_imports(), import_visitor.get_aliases());
+
         let sf = SourceFile {
             source_path: path.to_path_buf(),
             source,
             loc,
             constants: vec![],
-            import_visitor: SourceFile::visit(&statements, ImportVisitor::new()),
-            function_visitor: SourceFile::visit(&statements, CallVisitor::new()),
+            import_visitor,
+            function_visitor,
         };
 
         Ok(sf)

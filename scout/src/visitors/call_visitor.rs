@@ -1,17 +1,30 @@
-use crate::{ast::AstVisitor, utils::format_empty_arg};
+use crate::utils::format_empty_arg;
+
+use ast_walker::AstVisitor;
 use rustpython_parser::{
     ast::{ExpressionType, Keyword, Located},
     location::Location,
 };
 use std::{
-    collections::HashSet,
+    collections::HashMap,
     hash::{Hash, Hasher},
 };
+
+use super::import_visitor::ImportEntry;
 
 #[derive(Debug)]
 pub struct CallEntry {
     pub full_identifier: String,
     pub location: Location,
+}
+
+impl CallEntry {
+    pub fn get_identifier(&self) -> &str {
+        self.full_identifier
+            .split_once(".")
+            .unwrap_or_else(|| (&self.full_identifier, ""))
+            .0
+    }
 }
 
 impl Hash for CallEntry {
@@ -34,15 +47,14 @@ impl Eq for CallEntry {}
 
 #[derive(Debug)]
 pub struct CallVisitor {
-    pub entries: HashSet<CallEntry>,
+    pub entries: Vec<CallEntry>,
     pub errors: Vec<(String, Location)>,
 }
 
 impl CallVisitor {
     pub fn new() -> Self {
-        let map: HashSet<CallEntry> = HashSet::new();
         Self {
-            entries: map,
+            entries: vec![],
             errors: vec![],
         }
     }
@@ -56,6 +68,33 @@ impl CallVisitor {
             }
         }
         false
+    }
+
+    pub fn resolve_imports(
+        &mut self,
+        imports: &HashMap<String, ImportEntry>,
+        aliases: &HashMap<String, String>,
+    ) {
+        for entry in self.entries.iter_mut() {
+            if aliases.contains_key(entry.get_identifier()) {
+                if let Some(import) = imports.get(aliases.get(entry.get_identifier()).unwrap()) {
+                    let old = entry.full_identifier.clone();
+                    entry.full_identifier = entry
+                        .full_identifier
+                        .replace(entry.get_identifier(), import.module.as_str());
+                    trace!(
+                        "Resolving import for function: '{}' -> '{}'",
+                        old,
+                        entry.full_identifier
+                    );
+                } else {
+                    error!(
+                        "Fetching import from alias '{}' did not work.",
+                        entry.get_identifier()
+                    );
+                }
+            }
+        }
     }
 
     pub fn get_absolute_identifier(&mut self, expr: &Located<ExpressionType>) -> Option<String> {
@@ -110,7 +149,7 @@ impl AstVisitor for CallVisitor {
                 location: function.location,
             };
 
-            self.entries.insert(entry);
+            self.entries.push(entry);
         }
 
         // boilerplate

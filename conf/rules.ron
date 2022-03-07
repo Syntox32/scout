@@ -10,7 +10,7 @@
 ///
 
 ([
-    ( name: "Basic module rules", threshold: 0.40, rules: [
+    ( name: "Basic module rules", threshold: 0.30, rules: [
         // compression
         Module(Compression, "zlib", None, None),
         Module(Compression, "gzip", None, None),
@@ -27,6 +27,7 @@
         Module(Network, "socket", None, None),
         Module(Network, "urllib2", None, None),
         Module(Network, "urllib", None, None),
+        Module(Network, "urllib.request", None, None),
         Module(Network, "paramiko", None, None),
         Module(Network, "ftplib", None, None),
         Module(Network, "socketserver", None, None),
@@ -81,6 +82,7 @@
         Function(Encryption, "SHA256", None, None),
         Function(Encryption, "sha1", None, None),
         // networking
+        Function(Network, "urlopen", None, None),
         Function(Network, "socket", None, None),
         Function(Network, "bind", None, None),
         Function(Network, "setsockopt", None, None),

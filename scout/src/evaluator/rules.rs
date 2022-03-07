@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::utils;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+//#[serde(tag = "functionality")]
 pub enum Functionality {
     Encryption,
     Encoding,
@@ -45,20 +46,20 @@ pub struct RuleManager {
 }
 
 impl RuleManager {
-    const RULE_FILE: &'static str = "conf/rules.ron";
+    pub const DEFAULT_RULE_FILE: &'static str = "conf/rules.ron";
 
-    fn load_rules() -> Vec<RuleSet> {
-        trace!("Reading rule file: '{}'", RuleManager::RULE_FILE);
+    fn load_rules(rule_path: &str) -> Vec<RuleSet> {
+        trace!("Reading rule file: '{}'", rule_path);
         let rules_content =
-            utils::load_from_file(&PathBuf::from_str("conf/rules.ron").unwrap()).unwrap();
+            utils::load_from_file(&PathBuf::from_str(rule_path).unwrap()).unwrap();
         let Rules(rulesets) = ron::from_str(rules_content.as_str()).expect("failed to load rules");
         trace!("Loaded rulesets: {:?}", &rulesets);
         rulesets
     }
 
-    pub fn new() -> Self {
+    pub fn new(rule_path: &str) -> Self {
         Self {
-            rule_sets: RuleManager::load_rules(),
+            rule_sets: RuleManager::load_rules(rule_path),
         }
     }
 
