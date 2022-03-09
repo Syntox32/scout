@@ -60,8 +60,8 @@ impl<'a> Evaluator<'a> {
 
         let mut density_evaluator = DensityEvaluator::new(source.get_loc());
         let mut bulletins = vec![];
-
         let mut discovered: HashSet<String> = HashSet::new();
+
         for (module, entry) in &source.import_visitor.imports {
             self.import_rules
                 .iter()

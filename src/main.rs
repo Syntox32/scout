@@ -30,6 +30,7 @@ fn analyse_single(path: &str, rm: &RuleManager, threshold: f64, json_output: boo
     let path = PathBuf::from_str(path).unwrap();
     let package = Package::new(&path, &rm, threshold);
     if let Some(mut result) = package.analyse_single(&path) {
+        // result.density_evaluator._plot();
         if json_output {
             let mut out = JsonResult::new();
             out.add(&mut result);

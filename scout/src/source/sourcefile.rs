@@ -173,4 +173,13 @@ impl SourceFile {
             .collect::<Vec<String>>()
             .join(", ")
     }
+
+    pub fn _display_imports(&self) -> String {
+        self.import_visitor
+            .imports
+            .iter()
+            .map(|(ident, _) | ident.to_string())
+            .collect::<Vec<String>>()
+            .join(", ")
+    }
 }

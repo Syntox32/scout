@@ -22,6 +22,19 @@ pub struct DensityEvaluator {
     pub y: Vec<f64>,
 }
 
+struct Field {
+    loc: usize,
+    x: Vec<f64>,
+    y: Vec<f64>,
+}
+
+pub enum FieldType {
+    Functions,
+    Imports,
+    Behavior,
+    Strings
+}
+
 impl DensityEvaluator {
     const RESOLUTION: f64 = 0.1;
 
@@ -97,6 +110,7 @@ impl DensityEvaluator {
 
     // debug function only
     pub fn _plot(&self) {
+        debug!("Plotting XY");
         let plt = Plot {
             x: self.x.clone(),
             y: self.y.clone(),
