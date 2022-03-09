@@ -54,10 +54,13 @@
         Module(System, "os", None, None),
     ]),
     ( name: "Misc. suspicious rules", threshold: 0.20, rules: [
-       Module(System, "importlib", None, None),
-       Module(System, "marshal", None, None),
-       Function(System, "marshal.load", None, None),
-       Function(System, "marshal.loads", None, None),
+        Module(System, "importlib", None, None),
+        Module(System, "marshal", None, None),
+        Function(System, "marshal.load", None, None),
+        Function(System, "marshal.loads", None, None),
+        Module(System, "pytransform", None, None),
+        Function(System, "pyarmor_runtime", None, None),
+        Function(System, "__pyarmor__", None, None),
     ]),
     ( name: "Basic function rules", threshold: 0.20, rules: [
         // compression
@@ -98,9 +101,9 @@
         Function(Process, "setproctitle", None, None),
         Function(Process, "CreateThread", None, None),
         // filesyten
-        Function(FileSystem, "open", None, None),
-        Function(FileSystem, "StringIO", None, None),
-        Function(FileSystem, "BytesIO", None, None),
+        // Function(FileSystem, "open", None, None),
+        // Function(FileSystem, "StringIO", None, None),
+        // Function(FileSystem, "BytesIO", None, None),
         // System
         Function(System, "exec", None, None),
         Function(System, "execv", None, None),
