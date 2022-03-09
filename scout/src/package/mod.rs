@@ -101,7 +101,7 @@ impl<'a> Package<'a> {
     fn evaluate_source(&self, source: SourceFile) -> Option<EvaluatorResult> {
         let mut eval_result = self.checker.check(source);
         let mut message: String = String::from("");
-        
+
         if !(eval_result.found_anything()
             && eval_result.any_bulletins_over_threshold(self.threshold))
         {

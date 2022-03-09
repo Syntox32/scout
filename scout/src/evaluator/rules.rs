@@ -50,8 +50,7 @@ impl RuleManager {
 
     fn load_rules(rule_path: &str) -> Vec<RuleSet> {
         trace!("Reading rule file: '{}'", rule_path);
-        let rules_content =
-            utils::load_from_file(&PathBuf::from_str(rule_path).unwrap()).unwrap();
+        let rules_content = utils::load_from_file(&PathBuf::from_str(rule_path).unwrap()).unwrap();
         let Rules(rulesets) = ron::from_str(rules_content.as_str()).expect("failed to load rules");
         trace!("Loaded rulesets: {:?}", &rulesets);
         rulesets

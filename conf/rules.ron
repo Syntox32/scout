@@ -4,11 +4,9 @@
 ///     ```
 ///     Module(Functionality, Identifier, Name (optional), Description (optional))
 ///     ```
-/// 
+///
 /// You can choose between Module or Function.
 ///
-///
-
 ([
     ( name: "Basic module rules", threshold: 0.30, rules: [
         // compression

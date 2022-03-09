@@ -58,13 +58,15 @@ struct Args {
     json: Option<bool>,
 
     #[clap(short, long)]
-    rules: Option<String>
+    rules: Option<String>,
 }
 
 fn main() {
     pretty_env_logger::init();
     let args = Args::parse();
-    let rule_path = args.rules.unwrap_or(RuleManager::DEFAULT_RULE_FILE.to_string());
+    let rule_path = args
+        .rules
+        .unwrap_or(RuleManager::DEFAULT_RULE_FILE.to_string());
     let rm = RuleManager::new(&rule_path);
 
     let json = args.json.unwrap_or(false);

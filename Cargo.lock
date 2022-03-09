@@ -792,6 +792,7 @@ dependencies = [
  "ast_walker",
  "colored",
  "log",
+ "pretty_env_logger",
  "regex",
  "ron",
  "rustpython-parser",
@@ -918,6 +919,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dfed899f0eb03f32ee8c6a0aabdb8a7949659e3466561fc0adf54e26d88c5f4"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "tests"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "pretty_env_logger",
+ "scout",
 ]
 
 [[package]]

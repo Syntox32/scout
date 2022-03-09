@@ -13,6 +13,8 @@ pub struct ParseErrorFixer {
     attempts: i32,
     current_attempts: i32,
     regex_py2except: Regex,
+    regex_leading_zero: Regex,
+    tried_common_fixes: bool,
 }
 
 impl ParseErrorFixer {
@@ -21,7 +23,8 @@ impl ParseErrorFixer {
             attempts,
             current_attempts: 0,
             regex_py2except: Regex::new(r"except\s[\w]+[\s]*[,][\s]*[\w+]:").unwrap(),
-            // tried_except_fix: false,
+            regex_leading_zero: Regex::new(r"[0]+\d").unwrap(),
+            tried_common_fixes: false,
         }
     }
 
@@ -37,11 +40,24 @@ impl ParseErrorFixer {
             .lines()
             .map(|s| s.to_owned())
             .collect::<Vec<String>>();
-        for (idx, line_content) in lines.iter_mut().enumerate() {
-            if idx == line {
-                if self.regex_py2except.is_match(line_content) {
-                    *line_content = line_content.replace(",", " as ");
-                } else {
+
+        if !self.tried_common_fixes {
+            for line in lines.iter_mut() {
+                if let Some(captures) = self.regex_leading_zero.captures(line) {
+                    if let Some(m) = captures.get(0) {
+                        debug!("Match: {}", &m.as_str());
+                        let new = &m.as_str().replace("0", "");
+                        *line = line.replace(&m.as_str(), new);
+                    }
+                }
+                if self.regex_py2except.is_match(line) {
+                    *line = line.replace(",", " as ");
+                }
+            }
+        } else {
+            // if we have tried common fixes we just remove some lines to see if that works
+            for (idx, line_content) in lines.iter_mut().enumerate() {
+                if idx == line {
                     *line_content = String::from("");
                 }
             }
@@ -156,52 +172,5 @@ impl SourceFile {
             .map(|entry| entry.full_identifier.to_string())
             .collect::<Vec<String>>()
             .join(", ")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::source::SourceFile;
-    use std::path::PathBuf;
-    use std::str::FromStr;
-
-    #[test]
-    fn test_sourcefile_import() {
-        let test = PathBuf::from_str("../ast_experiment/tests/test-5.py").unwrap();
-        let sf = SourceFile::load(&test).unwrap();
-
-        assert!(sf.import_visitor.has_import("urllib.request"));
-    }
-
-    #[test]
-    fn test_sourcefile_function_visitor() {
-        let test = PathBuf::from_str("../ast_experiment/tests/test-5.py").unwrap();
-        let sf = SourceFile::load(&test).unwrap();
-
-        let function_visitor_test: Vec<String> = vec!["print", "urllib.request.urlopen"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
-
-        for test in function_visitor_test {
-            assert!(sf.function_visitor.has_function(&test));
-        }
-    }
-
-    #[test]
-    fn test_sourcefile_import_visitor_expanded() {
-        let test = PathBuf::from_str("../ast_experiment/tests/test-7.py").unwrap();
-        let sf = SourceFile::load(&test).unwrap();
-
-        assert!(sf.import_visitor.has_import("importlib"));
-        assert!(sf.import_visitor.has_import("base64"));
-    }
-
-    #[test]
-    fn test_sourcefile_function_visitor_expanded() {
-        let test = PathBuf::from_str("../ast_experiment/tests/test-7.py").unwrap();
-        let sf = SourceFile::load(&test).unwrap();
-
-        assert!(sf.function_visitor.has_function("b64decode"));
     }
 }

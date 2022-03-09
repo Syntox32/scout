@@ -9,6 +9,7 @@ edition = "2021"
 log = { version = "0.4.0" }
 rustpython-parser = "0.1.2"
 ast_walker = { path = "../ast_walker" }
+pretty_env_logger = "0.4.0"
 
 # serialization
 ron = "0.7"
