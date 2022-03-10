@@ -2,7 +2,7 @@ use crate::utils::format_empty_arg;
 
 use ast_walker::AstVisitor;
 use rustpython_parser::{
-    ast::{ExpressionType, Keyword, Located},
+    ast::{ExpressionType, Keyword, Located, Operator, StringGroup},
     location::Location,
 };
 use std::{
@@ -10,20 +10,26 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use super::import_visitor::ImportEntry;
-
 #[derive(Debug)]
 pub struct CallEntry {
     pub full_identifier: String,
     pub location: Location,
+    pub args: Vec<Option<String>>,
 }
 
 impl CallEntry {
-    pub fn get_identifier(&self) -> &str {
+    /// Returns the identifier of a full_identifier.
+    /// Example full_identifier "<identifier>.<attribute>.<attribute>" returns "<identifier>"
+    /// In the case of only having an identifier as full identifier, it will just return this.
+    pub fn get_base_identifier(&self) -> &str {
         self.full_identifier
             .split_once(".")
             .unwrap_or_else(|| (&self.full_identifier, ""))
             .0
+    }
+
+    pub fn get_identifier(&self) -> &String {
+        &self.full_identifier
     }
 }
 
@@ -70,29 +76,23 @@ impl CallVisitor {
         false
     }
 
-    pub fn resolve_imports(
-        &mut self,
-        imports: &HashMap<String, ImportEntry>,
-        aliases: &HashMap<String, String>,
-    ) {
+    pub fn get_entries(&self) -> &Vec<CallEntry> {
+        &self.entries
+    }
+
+    pub fn resolve_imports(&mut self, aliases: &HashMap<String, String>) {
         for entry in self.entries.iter_mut() {
-            if aliases.contains_key(entry.get_identifier()) {
-                if let Some(import) = imports.get(aliases.get(entry.get_identifier()).unwrap()) {
-                    let old = entry.full_identifier.clone();
-                    entry.full_identifier = entry
-                        .full_identifier
-                        .replace(entry.get_identifier(), import.module.as_str());
-                    trace!(
-                        "Resolving import for function: '{}' -> '{}'",
-                        old,
-                        entry.full_identifier
-                    );
-                } else {
-                    error!(
-                        "Fetching import from alias '{}' did not work.",
-                        entry.get_identifier()
-                    );
-                }
+            if aliases.contains_key(entry.get_base_identifier()) {
+                let module_identifier = aliases.get(entry.get_base_identifier()).unwrap();
+                let old = entry.full_identifier.clone();
+                entry.full_identifier = entry
+                    .full_identifier
+                    .replace(entry.get_base_identifier(), module_identifier);
+                trace!(
+                    "Resolving import for function: '{}' -> '{}'",
+                    old,
+                    entry.full_identifier
+                );
             }
         }
     }
@@ -122,6 +122,51 @@ impl CallVisitor {
             }
         }
     }
+
+    fn try_to_string(&self, expr: &Located<ExpressionType>) -> Option<String> {
+        match &expr.node {
+            // ExpressionType::Call { .. } => self.resolve_call(arg),
+            ExpressionType::Binop { a, op, b } => self.resolve_binop(a, b, op),
+            ExpressionType::String { value } => self.resolve_string_group(&value),
+            _ => None,
+        }
+    }
+
+    fn resolve_args(&mut self, args: &[Located<ExpressionType>]) -> Vec<Option<String>> {
+        // trace!("{:#?}", args);
+        let results: Vec<Option<String>> = args
+            .iter()
+            .map(|arg| self.try_to_string(arg))
+            .collect();
+        results
+    }
+
+    fn resolve_string_group(&self, value: &StringGroup) -> Option<String> {
+        match value {
+            StringGroup::Constant { value } => Some(value.to_owned()),
+            _ => None, //String::from("unsupported by resolve_string_group") }
+        }
+    }
+
+    fn resolve_binop(
+        &self,
+        a: &Box<Located<ExpressionType>>,
+        b: &Box<Located<ExpressionType>>,
+        op: &Operator,
+    ) -> Option<String> {
+
+        let aa = self.try_to_string(a)?;
+        let bb = self.try_to_string(b)?;
+        self.do_binop(aa, bb, op)
+    }
+
+    fn do_binop(&self, a: String, b: String, op: &Operator) -> Option<String> {
+        // trace!("doing bin op: {} {:?} {}", a, op, b);
+        match op {
+            Operator::Add => Some(format!("{}{}", a.to_owned(), b.to_owned())),
+            _ => None, //format!("{} binop {}", a, b)
+        }
+    }
 }
 
 impl AstVisitor for CallVisitor {
@@ -144,9 +189,12 @@ impl AstVisitor for CallVisitor {
         };
 
         if let Some(f) = func {
+            let args = self.resolve_args(args);
+            trace!("args for func {} = {:?}", f, args);
             let entry = CallEntry {
                 full_identifier: f,
                 location: function.location,
+                args,
             };
 
             self.entries.push(entry);
@@ -160,61 +208,6 @@ impl AstVisitor for CallVisitor {
             .for_each(|kw| self.walk_expression(&kw.value));
     }
 }
-
-// fn do_binop(&self, a: String, b: String, op: &Operator) -> Option<String> {
-//     match op {
-//         Operator::Add => Some(format!("{}{}", a.to_owned(), b.to_owned())),
-//         _ => None, //format!("{} binop {}", a, b)
-//     }
-// }
-
-// fn resolve_string_group(&self, value: &StringGroup) -> Option<String> {
-//     match value {
-//         StringGroup::Constant { value } => Some(value.to_owned()),
-//         _ => None, //String::from("unsupported by resolve_string_group") }
-//     }
-// }
-
-// fn resolve_binop(&self, bin_expr: &Located<ExpressionType>) -> Option<String> {
-//     match &bin_expr.node {
-//         ExpressionType::Binop { a, b, op } => match &a.deref().node {
-//             ExpressionType::String { value } => {
-//                 let a_str = self.resolve_string_group(&value)?;
-
-//                 match &b.deref().node {
-//                     ExpressionType::String { value } => {
-//                         let b_str = self.resolve_string_group(&value)?;
-
-//                         self.do_binop(a_str, b_str, op)
-//                     }
-//                     _ => None,
-//                 }
-//             }
-//             _ => None,
-//         },
-//         _ => panic!(
-//             "resolve_binop only expects bin_op expressions: {}",
-//             bin_expr.name()
-//         ),
-//     }
-// }
-
-// fn resolve_args(&mut self, args: &Vec<Located<ExpressionType>>) -> Vec<String> {
-//     let results: Vec<Option<String>> = args
-//         .iter()
-//         .map(|arg| match &arg.node {
-//             ExpressionType::Call { .. } => self.resolve_call(arg),
-//             ExpressionType::Binop { .. } => self.resolve_binop(arg),
-//             ExpressionType::String { value } => self.resolve_string_group(&value),
-//             _ => None,
-//         })
-//         .collect();
-
-//     results
-//         .iter()
-//         .map(|s| self.format_empty_arg(s))
-//         .collect::<Vec<String>>()
-// }
 
 // fn resolve_call(&mut self, call_expr: &Located<ExpressionType>) -> Option<String> {
 //     match &call_expr.node {

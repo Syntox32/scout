@@ -77,8 +77,6 @@ impl<'a> Package<'a> {
             }
         }
 
-        
-
         Some(results)
     }
 
@@ -105,7 +103,7 @@ impl<'a> Package<'a> {
         let mut eval_result = self.checker.check(source);
         let mut message: String = String::from("");
 
-        println!("hello: {:?}", eval_result.bulletins());
+        trace!("Bulletins before purge: {:?}", eval_result.bulletins());
 
         if !(eval_result.found_anything()
             && eval_result.any_bulletins_over_threshold(self.threshold))

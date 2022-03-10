@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 
 use ast_walker::AstVisitor;
 use rustpython_parser::{
@@ -6,12 +7,16 @@ use rustpython_parser::{
     location::Location,
 };
 
+use super::CallEntry;
+
 #[derive(Debug)]
 pub struct ImportEntry {
     pub module: String,
+    pub symbol: Option<String>,
     pub location: Location,
     pub alias: Option<String>,
     pub context: String,
+    pub is_dynamic: bool,
 }
 
 impl Hash for ImportEntry {
@@ -49,12 +54,20 @@ impl ImportVisitor {
         }
     }
 
-    pub fn get_imports(&self) -> &HashMap<String, ImportEntry> {
+    pub fn get_imports(&self) -> &HashSet<ImportEntry> {
         &self.imports
     }
 
     pub fn get_aliases(&self) -> &HashMap<String, String> {
         &self.aliases
+    }
+
+    pub fn get_num_imports(&self) -> usize {
+        self.imports.len()
+    }
+
+    pub fn get_counts(&self) -> &HashMap<String, usize> {
+        &self.count
     }
 
     pub fn set_call_context(&mut self, ctx: String) {
@@ -69,23 +82,58 @@ impl ImportVisitor {
         self.call_context.pop();
     }
 
-    #[allow(unused)]
     pub fn has_import(&self, contains: &str) -> bool {
-        // self.imports.contains_key(&contains.to_owned())
-        for key in self.imports.keys() {
-            if key.as_str() == contains {
-                return true;
-            }
-        }
-        false
+        self.count.contains_key(contains)
     }
 
-    // pub fn _get_imports(&self) -> Vec<String> {
-    //     self.imports
-    //         .iter()
-    //         .map(|(module, _)| module.clone().to_string())
-    //         .collect::<Vec<String>>()
-    // }
+    pub fn get_count(&self, import: &str) -> Option<usize> {
+        Some(self.count.get(import)?.to_owned())
+    }
+
+    pub fn add_to_count(&mut self, import: &str) {
+        if let Some(count) = self.count.get_mut(&import.to_string()) {
+            *count += 1;
+        } else {
+            self.count.insert(import.to_string(), 1);
+        }
+    }
+
+    pub fn add_import(&mut self, entry: ImportEntry) {
+        self.add_to_count(&entry.module);
+
+        if let Some(a) = &entry.alias {
+            if let Some(symbol) = &entry.symbol {
+                self.aliases.insert(a.to_string(), format!("{}.{}", entry.module.to_string(), &symbol));
+            } else {
+                self.aliases.insert(a.to_string(), entry.module.to_string());
+            }
+        }
+
+        self.imports.insert(entry);
+    }
+
+    pub fn resolve_dynamic_imports(&mut self, entries: &Vec<CallEntry>) {
+        for entry in entries {
+            if *entry.get_identifier() == String::from("__import__")
+                || *entry.get_identifier() == String::from("importlib.import_module")
+            {
+                if let Some(arg) = entry.args.first() {
+                    if let Some(import_name) = arg {
+                        let entry = ImportEntry {
+                            module: import_name.to_string(),
+                            symbol: None,
+                            location: entry.location,
+                            alias: None,
+                            context: String::from("global"), // TODO: Change this to keep track of context in the call_visitor
+                            is_dynamic: true,                // default
+                        };
+
+                        self.add_import(entry);
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl AstVisitor for ImportVisitor {
@@ -95,15 +143,14 @@ impl AstVisitor for ImportVisitor {
         for name in names {
             let entry = ImportEntry {
                 module: name.symbol.to_string(),
+                symbol: None,
                 location: stmt.location,
                 alias: name.alias.clone(),
                 context: self.get_call_context(),
+                is_dynamic: false, // default
             };
-            self.imports.insert(name.symbol.to_string(), entry);
 
-            if let Some(a) = name.alias.clone() {
-                self.aliases.insert(a.to_string(), name.symbol.to_string());
-            }
+            self.add_import(entry);
         }
     }
 
@@ -117,22 +164,21 @@ impl AstVisitor for ImportVisitor {
     ) {
         for name in names {
             let full_name = match module {
-                Some(m) => format!("{}.{}", m, name.symbol),
+                Some(m) => m.to_string(), //format!("{}.{}", m, name.symbol),
                 None => name.symbol.to_string(),
             };
+            trace!("full name: {}", &full_name);
 
             let entry = ImportEntry {
                 module: full_name.clone(),
+                symbol: Some(name.symbol.to_string()),
                 location: stmt.location,
                 alias: name.alias.clone(),
                 context: self.get_call_context(),
+                is_dynamic: false, // default
             };
 
-            self.imports.insert(full_name.clone(), entry);
-
-            if let Some(a) = name.alias.clone() {
-                self.aliases.insert(a.to_string(), full_name.clone());
-            }
+            self.add_import(entry);
         }
     }
 
