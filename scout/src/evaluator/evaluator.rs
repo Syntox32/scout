@@ -79,11 +79,11 @@ impl<'a> Evaluator<'a> {
         let mut bulletins = vec![];
         let mut discovered: HashSet<String> = HashSet::new();
 
-        for (module, entry) in &source.import_visitor.imports {
+        for entry in source.import_visitor.get_imports() {
             self.import_rules
                 .iter()
                 .for_each(|(identifier, rule_entry)| {
-                    if module == identifier && !discovered.contains(identifier) {
+                    if entry.module.to_string() == *identifier && !discovered.contains(identifier) {
                         let notif = Bulletin::new(
                             identifier.to_string(),
                             BulletinReason::SuspiciousImport,
@@ -99,7 +99,7 @@ impl<'a> Evaluator<'a> {
 
                         if entry.context == "function" {
                             let notif = Bulletin::new(
-                                module.to_string(),
+                                entry.module.to_string(),
                                 BulletinReason::ImportInsideFunction,
                                 entry.location,
                                 None,

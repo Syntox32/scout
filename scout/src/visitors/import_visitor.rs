@@ -14,21 +14,37 @@ pub struct ImportEntry {
     pub context: String,
 }
 
+impl Hash for ImportEntry {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.module.hash(state);
+        self.location.row().hash(state);
+        self.location.column().hash(state);
+    }
+}
+
+impl PartialEq for ImportEntry {
+    fn eq(&self, other: &Self) -> bool {
+        (self.module == other.module)
+            && (self.location.row() == other.location.row())
+            && (self.location.column() == other.location.column())
+    }
+}
+impl Eq for ImportEntry {}
+
 #[derive(Debug)]
 pub struct ImportVisitor {
-    pub imports: HashMap<String, ImportEntry>,
+    pub imports: HashSet<ImportEntry>,
     pub aliases: HashMap<String, String>,
-    call_context: Vec<String>,
+    count: HashMap<String, usize>,
+    call_context: Vec<String>, // TODO: change this to an enum?
 }
 
 impl ImportVisitor {
     pub fn new() -> Self {
-        let imports: HashMap<String, ImportEntry> = HashMap::new();
-        let aliases: HashMap<String, String> = HashMap::new();
-
         ImportVisitor {
-            imports,
-            aliases,
+            imports: HashSet::new(),
+            aliases: HashMap::new(),
+            count: HashMap::new(),
             call_context: vec![String::from("global")],
         }
     }
