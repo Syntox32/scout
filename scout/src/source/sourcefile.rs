@@ -54,6 +54,7 @@ impl ParseErrorFixer {
                     *line = line.replace(",", " as ");
                 }
             }
+            self.tried_common_fixes = true;
         } else {
             // if we have tried common fixes we just remove some lines to see if that works
             for (idx, line_content) in lines.iter_mut().enumerate() {
@@ -132,11 +133,11 @@ impl SourceFile {
         };
         let loc = source.lines().count().to_owned();
 
-        let import_visitor = SourceFile::visit(&statements, ImportVisitor::new());
+        let mut import_visitor = SourceFile::visit(&statements, ImportVisitor::new());
         let mut function_visitor = SourceFile::visit(&statements, CallVisitor::new());
 
-        function_visitor
-            .resolve_imports(import_visitor.get_imports(), import_visitor.get_aliases());
+        function_visitor.resolve_imports(import_visitor.get_aliases());
+        import_visitor.resolve_dynamic_imports(function_visitor.get_entries());
 
         let sf = SourceFile {
             source_path: path.to_path_buf(),
@@ -176,9 +177,9 @@ impl SourceFile {
 
     pub fn _display_imports(&self) -> String {
         self.import_visitor
-            .imports
+            .get_counts()
             .iter()
-            .map(|(ident, _) | ident.to_string())
+            .map(|(ident, _)| ident.to_string())
             .collect::<Vec<String>>()
             .join(", ")
     }
