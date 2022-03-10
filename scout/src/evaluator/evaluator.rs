@@ -54,6 +54,23 @@ impl<'a> Evaluator<'a> {
         }
     }
 
+    // pub fn evaluate_all(&self, sources: Vec<SourceFile>) -> EvaluatorResult {
+    //     let mut alerts_functions: i32 = 0;
+    //     let mut alerts_imports: i32 = 0;
+
+    //     let mut density_evaluator = DensityEvaluator::new(source.get_loc());
+    //     let mut bulletins = vec![];
+
+    //     EvaluatorResult {
+    //         alerts_functions,
+    //         alerts_imports,
+    //         density_evaluator,
+    //         bulletins,
+    //         source,
+    //         message: String::from(""),
+    //     }
+    // }
+
     pub fn check(&self, source: SourceFile) -> EvaluatorResult {
         let mut alerts_functions: i32 = 0;
         let mut alerts_imports: i32 = 0;
