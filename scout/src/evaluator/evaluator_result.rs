@@ -1,7 +1,10 @@
-use std::collections::HashMap;
-use serde::{Serialize};
+use super::{
+    density_evaluator::{DensityEvaluator, Field, FieldType},
+    Bulletin, Bulletins, Functionality, Hotspot,
+};
 use crate::SourceFile;
-use super::{density_evaluator::{DensityEvaluator, FieldType, Field}, Bulletin, Bulletins, Functionality, Hotspot};
+use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize)]
 pub struct JsonResult<'a> {
@@ -12,7 +15,6 @@ pub struct JsonResult<'a> {
 }
 
 impl<'a> JsonResult<'a> {
-
     pub fn new() -> Self {
         Self {
             bulletins: HashMap::new(),

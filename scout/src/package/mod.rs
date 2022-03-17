@@ -5,16 +5,9 @@ use crate::{
 };
 use colored::Colorize;
 use std::{
-    fs,
     path::{Path, PathBuf},
     str::FromStr,
 };
-
-#[derive(PartialEq, Debug)]
-pub enum PackageType {
-    Wheel,
-    Zip,
-}
 
 pub struct Package<'a> {
     pub path: PathBuf,
@@ -99,7 +92,11 @@ impl<'a> Package<'a> {
         }
     }
 
-    fn evaluate_source(&self, source: SourceFile, show_all_override: bool) -> Option<EvaluatorResult> {
+    fn evaluate_source(
+        &self,
+        source: SourceFile,
+        show_all_override: bool,
+    ) -> Option<EvaluatorResult> {
         let mut eval_result = self.checker.check(source, show_all_override);
         let mut message: String = String::from("");
 
@@ -209,21 +206,6 @@ impl<'a> Package<'a> {
         // }
     }
 
-    fn get_wheel_pkg_name(path: &Path) -> Option<String> {
-        path.file_name()?
-            .to_str()?
-            .split_once('-')
-            .map(|(str_a, _)| str_a.to_lowercase())
-        // for dir in fs::read_dir(path).unwrap() {
-        //     let dir_name = dir.unwrap().path().file_name()?.to_str()?.to_string();
-        //     if !&dir_name.ends_with("dist-info") {
-        //         return Some(dir_name);
-        //     }
-        // }
-        // None
-        
-    }
-
     pub fn locate_package(path: &str) -> Option<Box<Path>> {
         let p = PathBuf::from_str(path).unwrap();
         debug!("Locating package: {:?}", &p);
@@ -231,65 +213,5 @@ impl<'a> Package<'a> {
         let pkg_path = Package::get_package_dir(&p)?;
         // println!("pkg path: {}", &pkg_path.as_os_str().to_str().unwrap());
         Some(Box::from(pkg_path))
-    }
-
-    fn detect_package_type<P>(path: P) -> Option<PackageType>
-    where
-        P: AsRef<Path>,
-    {
-        let mut any_is_dist_info: Option<bool> = None;
-
-        for entry in fs::read_dir(path).unwrap() {
-            let path = entry.unwrap().path();
-            let name = path.file_name().unwrap().to_str().unwrap();
-
-            if name.ends_with(".dist-info") {
-                any_is_dist_info = Some(true);
-            } else if name.ends_with("setup.py") {
-                any_is_dist_info = Some(false);
-            }
-        }
-
-        match any_is_dist_info {
-            Some(true) => Some(PackageType::Wheel),
-            Some(false) => Some(PackageType::Zip),
-            None => None,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-    use std::str::FromStr;
-
-    use crate::package::Package;
-    use crate::package::PackageType;
-
-    #[test]
-    fn test_detect_package() {
-        let test_wheel = "../../dataset/top/unpacked/Flask-2.0.2-py3-none-any.whl";
-        let test_zip = "../../dataset/top/unpacked/termcolor-1.1.0.tar.gz/termcolor-1.1.0";
-        let test_none = "../../dataset/top/unpacked/termcolor-1.1.0.tar.gz";
-
-        assert_eq!(
-            Package::detect_package_type(test_wheel),
-            Some(PackageType::Wheel)
-        );
-        assert_eq!(
-            Package::detect_package_type(test_zip),
-            Some(PackageType::Zip)
-        );
-        assert_eq!(Package::detect_package_type(test_none), None);
-    }
-
-    #[test]
-    fn test_get_wheel_package_name() {
-        let test_wheel =
-            PathBuf::from_str("../../dataset/top/unpacked/Flask-2.0.2-py3-none-any.whl").unwrap();
-        assert_eq!(
-            Package::get_wheel_pkg_name(&test_wheel),
-            Some(String::from("flask"))
-        );
     }
 }

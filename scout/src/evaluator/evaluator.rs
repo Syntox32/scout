@@ -84,7 +84,8 @@ impl<'a> Evaluator<'a> {
             self.import_rules
                 .iter()
                 .for_each(|(identifier, rule_entry)| {
-                    if entry.module.to_string() == *identifier { //&& !discovered.contains(identifier) {
+                    if entry.module.to_string() == *identifier {
+                        //&& !discovered.contains(identifier) {
                         let notif = Bulletin::new(
                             identifier.to_string(),
                             BulletinReason::SuspiciousImport,

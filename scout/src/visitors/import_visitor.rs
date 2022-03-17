@@ -63,10 +63,6 @@ impl ImportVisitor {
         &self.aliases
     }
 
-    pub fn get_num_imports(&self) -> usize {
-        self.imports.len()
-    }
-
     pub fn get_counts(&self) -> &HashMap<String, usize> {
         &self.count
     }

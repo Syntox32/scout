@@ -62,7 +62,7 @@ impl Field {
             combined_x.push(x.to_owned());
             combined_y.push(0.0);
         }
-        
+
         mult(&funcs.y, &funcs.multiplier, &mut combined_y);
         mult(&imports.y, &imports.multiplier, &mut combined_y);
         mult(&behavior.y, &behavior.multiplier, &mut combined_y);

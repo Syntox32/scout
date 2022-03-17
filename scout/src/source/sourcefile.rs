@@ -8,7 +8,7 @@ use std::io::{self, Error};
 use std::path::{Path, PathBuf};
 
 use crate::utils;
-use crate::visitors::{CallVisitor, ImportVisitor, ImportEntry};
+use crate::visitors::{CallVisitor, ImportEntry, ImportVisitor};
 
 pub struct ParseErrorFixer {
     attempts: i32,
@@ -154,6 +154,14 @@ impl SourceFile {
 
     pub fn get_imports(&self) -> &HashSet<ImportEntry> {
         self.import_visitor.get_imports()
+    }
+
+    pub fn has_import(&self, import: &str) -> bool {
+        self.import_visitor.has_import(import)
+    }
+
+    pub fn get_count(&self, import: &str) -> Option<usize> {
+        self.import_visitor.get_count(import)
     }
 
     pub fn get_loc(&self) -> usize {
