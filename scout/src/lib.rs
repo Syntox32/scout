@@ -8,5 +8,5 @@ mod visitors;
 extern crate log;
 
 pub use evaluator::{Evaluator, EvaluatorResult, JsonResult, RuleManager};
-pub use package::{Package, PackageType};
+pub use package::Package;
 pub use source::SourceFile;
