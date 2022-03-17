@@ -3,11 +3,12 @@ use regex::Regex;
 use rustpython_parser::ast::{Program, Statement};
 use rustpython_parser::error::ParseError;
 use rustpython_parser::parser;
+use std::collections::HashSet;
 use std::io::{self, Error};
 use std::path::{Path, PathBuf};
 
 use crate::utils;
-use crate::visitors::{CallVisitor, ImportVisitor};
+use crate::visitors::{CallVisitor, ImportVisitor, ImportEntry};
 
 pub struct ParseErrorFixer {
     attempts: i32,
@@ -75,7 +76,7 @@ pub struct SourceFile {
     loc: usize,
 
     pub constants: Vec<String>,
-    pub import_visitor: ImportVisitor,
+    import_visitor: ImportVisitor,
     pub function_visitor: CallVisitor,
 }
 
@@ -149,6 +150,10 @@ impl SourceFile {
         };
 
         Ok(sf)
+    }
+
+    pub fn get_imports(&self) -> &HashSet<ImportEntry> {
+        self.import_visitor.get_imports()
     }
 
     pub fn get_loc(&self) -> usize {

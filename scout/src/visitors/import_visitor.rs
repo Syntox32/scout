@@ -37,9 +37,9 @@ impl PartialEq for ImportEntry {
 impl Eq for ImportEntry {}
 
 #[derive(Debug)]
-pub struct ImportVisitor {
-    pub imports: HashSet<ImportEntry>,
-    pub aliases: HashMap<String, String>,
+pub(crate) struct ImportVisitor {
+    imports: HashSet<ImportEntry>,
+    aliases: HashMap<String, String>,
     count: HashMap<String, usize>,
     call_context: Vec<String>, // TODO: change this to an enum?
 }
@@ -55,6 +55,7 @@ impl ImportVisitor {
     }
 
     pub fn get_imports(&self) -> &HashSet<ImportEntry> {
+        trace!("imports: {:?}", &self.imports);
         &self.imports
     }
 
@@ -70,15 +71,15 @@ impl ImportVisitor {
         &self.count
     }
 
-    pub fn set_call_context(&mut self, ctx: String) {
+    fn set_call_context(&mut self, ctx: String) {
         self.call_context.push(ctx);
     }
 
-    pub fn get_call_context(&self) -> String {
+    fn get_call_context(&self) -> String {
         self.call_context.last().unwrap().to_string()
     }
 
-    pub fn clear_call_context(&mut self) {
+    fn clear_call_context(&mut self) {
         self.call_context.pop();
     }
 
@@ -103,7 +104,10 @@ impl ImportVisitor {
 
         if let Some(a) = &entry.alias {
             if let Some(symbol) = &entry.symbol {
-                self.aliases.insert(a.to_string(), format!("{}.{}", entry.module.to_string(), &symbol));
+                self.aliases.insert(
+                    a.to_string(),
+                    format!("{}.{}", entry.module.to_string(), &symbol),
+                );
             } else {
                 self.aliases.insert(a.to_string(), entry.module.to_string());
             }
