@@ -5,6 +5,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+use super::density_evaluator::FieldType;
 use super::{Bulletin, BulletinReason, DensityEvaluator, Rule, RuleSet};
 
 #[derive(Debug)]
@@ -65,13 +66,13 @@ impl<'a> Evaluator<'a> {
     //         alerts_functions,
     //         alerts_imports,
     //         density_evaluator,
-    //         bulletins,
+    //         bulletins?,
     //         source,
     //         message: String::from(""),
     //     }
     // }
 
-    pub fn check(&self, source: SourceFile) -> EvaluatorResult {
+    pub fn check(&self, source: SourceFile, show_all_override: bool) -> EvaluatorResult {
         let mut alerts_functions: i32 = 0;
         let mut alerts_imports: i32 = 0;
 
@@ -79,11 +80,11 @@ impl<'a> Evaluator<'a> {
         let mut bulletins = vec![];
         let mut discovered: HashSet<String> = HashSet::new();
 
-        for entry in source.import_visitor.get_imports() {
+        for entry in source.get_imports() {
             self.import_rules
                 .iter()
                 .for_each(|(identifier, rule_entry)| {
-                    if entry.module.to_string() == *identifier && !discovered.contains(identifier) {
+                    if entry.module.to_string() == *identifier { //&& !discovered.contains(identifier) {
                         let notif = Bulletin::new(
                             identifier.to_string(),
                             BulletinReason::SuspiciousImport,
@@ -92,7 +93,7 @@ impl<'a> Evaluator<'a> {
                             rule_entry.1.threshold,
                         );
                         bulletins.push(notif);
-                        density_evaluator.add_density(entry.location.row());
+                        density_evaluator.add_density(FieldType::Imports, entry.location.row());
                         alerts_imports += 1;
 
                         discovered.insert(identifier.to_string());
@@ -106,7 +107,7 @@ impl<'a> Evaluator<'a> {
                                 0.3f64,
                             );
                             bulletins.push(notif);
-                            density_evaluator.add_density(entry.location.row());
+                            density_evaluator.add_density(FieldType::Imports, entry.location.row());
                             alerts_imports += 1;
                         }
                     }
@@ -126,7 +127,7 @@ impl<'a> Evaluator<'a> {
                             rule_entry.1.threshold,
                         );
                         bulletins.push(notif);
-                        density_evaluator.add_density(entry.location.row());
+                        density_evaluator.add_density(FieldType::Functions, entry.location.row());
                         alerts_functions += 1;
                     }
                 });
@@ -139,6 +140,7 @@ impl<'a> Evaluator<'a> {
             bulletins,
             source,
             message: String::from(""),
+            show_all: show_all_override,
         }
     }
 
