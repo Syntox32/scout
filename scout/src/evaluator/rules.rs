@@ -10,9 +10,9 @@ pub enum Functionality {
     Encryption,
     Encoding,
     Compression,
+    FileSystem,
     Network,
     Process,
-    FileSystem,
     System,
 }
 
@@ -49,7 +49,6 @@ impl RuleManager {
     pub const DEFAULT_RULE_FILE: &'static str = "conf/rules.ron";
 
     fn load_rules(rule_path: &str) -> Vec<RuleSet> {
-        
         let rules_content = utils::load_from_file(&PathBuf::from_str(rule_path).unwrap()).unwrap();
         let Rules(rulesets) = ron::from_str(rules_content.as_str()).expect("failed to load rules");
         trace!("Loaded {} rulesets from '{}'", rulesets.len(), rule_path);
