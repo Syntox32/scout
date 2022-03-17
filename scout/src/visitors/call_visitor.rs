@@ -134,10 +134,7 @@ impl CallVisitor {
 
     fn resolve_args(&mut self, args: &[Located<ExpressionType>]) -> Vec<Option<String>> {
         // trace!("{:#?}", args);
-        let results: Vec<Option<String>> = args
-            .iter()
-            .map(|arg| self.try_to_string(arg))
-            .collect();
+        let results: Vec<Option<String>> = args.iter().map(|arg| self.try_to_string(arg)).collect();
         results
     }
 
@@ -154,7 +151,6 @@ impl CallVisitor {
         b: &Box<Located<ExpressionType>>,
         op: &Operator,
     ) -> Option<String> {
-
         let aa = self.try_to_string(a)?;
         let bb = self.try_to_string(b)?;
         self.do_binop(aa, bb, op)
@@ -190,7 +186,7 @@ impl AstVisitor for CallVisitor {
 
         if let Some(f) = func {
             let args = self.resolve_args(args);
-            trace!("args for func {} = {:?}", f, args);
+            // trace!("args for func {} = {:?}", f, args);
             let entry = CallEntry {
                 full_identifier: f,
                 location: function.location,
