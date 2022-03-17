@@ -64,13 +64,13 @@ impl<'a> Package<'a> {
         sources
     }
 
-    pub fn analyse(&mut self) -> Option<Vec<EvaluatorResult>> {
+    pub fn analyse(&mut self, show_all_override: bool) -> Option<Vec<EvaluatorResult>> {
         // println!("package: analyzing");
         let sources = self.get_sources();
         let mut results: Vec<EvaluatorResult> = vec![];
         for source in sources {
             let path = &source.get_path().to_owned();
-            if let Some(result) = self.evaluate_source(source) {
+            if let Some(result) = self.evaluate_source(source, show_all_override) {
                 results.push(result);
             } else {
                 warn!("Could not evaluate source: {}", path);
@@ -80,10 +80,10 @@ impl<'a> Package<'a> {
         Some(results)
     }
 
-    pub fn analyse_single(&self, path: &Path) -> Option<EvaluatorResult> {
+    pub fn analyse_single(&self, path: &Path, show_all_override: bool) -> Option<EvaluatorResult> {
         match SourceFile::load(&path) {
             Ok(source) => {
-                if let Some(result) = self.evaluate_source(source) {
+                if let Some(result) = self.evaluate_source(source, show_all_override) {
                     return Some(result);
                 }
                 None
@@ -99,8 +99,8 @@ impl<'a> Package<'a> {
         }
     }
 
-    fn evaluate_source(&self, source: SourceFile) -> Option<EvaluatorResult> {
-        let mut eval_result = self.checker.check(source);
+    fn evaluate_source(&self, source: SourceFile, show_all_override: bool) -> Option<EvaluatorResult> {
+        let mut eval_result = self.checker.check(source, show_all_override);
         let mut message: String = String::from("");
 
         trace!("Bulletins before purge: {:?}", eval_result.bulletins());
@@ -198,28 +198,30 @@ impl<'a> Package<'a> {
     }
 
     fn get_package_dir(path: &Path) -> Option<PathBuf> {
-        match Package::detect_package_type(&path)? {
-            PackageType::Zip => Some(path.to_path_buf()),
-            PackageType::Wheel => {
-                let mut pb = path.to_path_buf();
-                pb.push(Package::get_wheel_pkg_name(path)?);
-                Some(pb)
-            }
-        }
+        Some(path.to_path_buf())
+        // match Package::detect_package_type(&path)? {
+        //     PackageType::Zip => Some(path.to_path_buf()),
+        //     PackageType::Wheel => {
+        //         let mut pb = path.to_path_buf();
+        //         pb.push(Package::get_wheel_pkg_name(path)?);
+        //         Some(pb)
+        //     }
+        // }
     }
 
     fn get_wheel_pkg_name(path: &Path) -> Option<String> {
-        for dir in fs::read_dir(path).unwrap() {
-            let dir_name = dir.unwrap().path().file_name()?.to_str()?.to_string();
-            if !&dir_name.ends_with("dist-info") {
-                return Some(dir_name);
-            }
-        }
-        None
-        // path.file_name()?
-        //     .to_str()?
-        //     .split_once('-')
-        //     .map(|(str_a, _)| str_a.to_lowercase())
+        path.file_name()?
+            .to_str()?
+            .split_once('-')
+            .map(|(str_a, _)| str_a.to_lowercase())
+        // for dir in fs::read_dir(path).unwrap() {
+        //     let dir_name = dir.unwrap().path().file_name()?.to_str()?.to_string();
+        //     if !&dir_name.ends_with("dist-info") {
+        //         return Some(dir_name);
+        //     }
+        // }
+        // None
+        
     }
 
     pub fn locate_package(path: &str) -> Option<Box<Path>> {
