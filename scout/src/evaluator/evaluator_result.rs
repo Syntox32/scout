@@ -1,22 +1,24 @@
 use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize};
-
+use serde::{Serialize};
 use crate::SourceFile;
+use super::{density_evaluator::{DensityEvaluator, FieldType, Field}, Bulletin, Bulletins, Functionality, Hotspot};
 
-use super::{density_evaluator::DensityEvaluator, Bulletin, Bulletins, Functionality, Hotspot};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct JsonResult {
+#[derive(Debug, Serialize)]
+pub struct JsonResult<'a> {
     bulletins: HashMap<String, Bulletins>,
     hotspots: HashMap<String, Vec<Hotspot>>,
+    fields: Option<&'a HashMap<FieldType, Field>>,
+    combined_field: Option<Field>,
 }
 
-impl JsonResult {
+impl<'a> JsonResult<'a> {
+
     pub fn new() -> Self {
         Self {
             bulletins: HashMap::new(),
             hotspots: HashMap::new(),
+            fields: None,
+            combined_field: None,
         }
     }
 
@@ -34,6 +36,12 @@ impl JsonResult {
         }
     }
 
+    pub fn add_with_fields(&mut self, other: &'a mut EvaluatorResult) {
+        self.add(other);
+        self.fields = Some(other.density_evaluator.get_fields());
+        self.combined_field = Some(other.density_evaluator.calculate_combined_field());
+    }
+
     pub fn get_json(&self) -> String {
         serde_json::to_string(&self).unwrap()
     }
@@ -47,6 +55,7 @@ pub struct EvaluatorResult {
     pub bulletins: Bulletins,
     pub source: SourceFile,
     pub message: String,
+    pub show_all: bool,
 }
 
 impl EvaluatorResult {
@@ -55,6 +64,10 @@ impl EvaluatorResult {
     }
 
     pub fn any_bulletins_over_threshold(&self, package_threshold: f64) -> bool {
+        if self.show_all {
+            return true;
+        }
+
         for (group, hotspot) in self.bulletins_by_hotspot() {
             for (line, _) in hotspot.get_code(&self.source) {
                 // add 1 because  its a 0 based index because of enumerate
@@ -83,13 +96,15 @@ impl EvaluatorResult {
     }
 
     pub fn get_hotspots(&self) -> Vec<Hotspot> {
-        self.density_evaluator.hotspots()
+        let hotspots = self.density_evaluator.hotspots();
+        trace!("hotspots: {:?}", hotspots);
+        hotspots
     }
 
     pub fn bulletins_by_hotspot(&self) -> Vec<(Vec<&Bulletin>, Hotspot)> {
         let mut groups: Vec<(Vec<&Bulletin>, Hotspot)> = vec![];
 
-        for hotspot in self.density_evaluator.hotspots() {
+        for hotspot in self.get_hotspots() {
             let mut group: Vec<&Bulletin> = vec![];
             for bulletin in &self.bulletins {
                 if bulletin.line() >= hotspot.line_low() && bulletin.line() <= hotspot.line_high() {
@@ -99,6 +114,7 @@ impl EvaluatorResult {
             groups.push((group, hotspot));
         }
 
+        trace!("Bulletins by hotspot: {:?}", &groups);
         groups
     }
 

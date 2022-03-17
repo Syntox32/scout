@@ -7,9 +7,9 @@ use scout::{JsonResult, Package, RuleManager};
 #[macro_use]
 extern crate log;
 
-fn analyse_package(path: &Path, rules: &RuleManager, threshold: f64, json_output: bool) {
+fn analyse_package(path: &Path, rules: &RuleManager, threshold: f64, json_output: bool, show_all_override: bool) {
     let mut package = Package::new(path, rules, threshold);
-    if let Some(result) = package.analyse() {
+    if let Some(result) = package.analyse(show_all_override) {
         if json_output {
             let mut out = JsonResult::new();
             for mut res in result {
@@ -26,14 +26,14 @@ fn analyse_package(path: &Path, rules: &RuleManager, threshold: f64, json_output
     }
 }
 
-fn analyse_single(path: &str, rm: &RuleManager, threshold: f64, json_output: bool) {
+fn analyse_single(path: &str, rm: &RuleManager, threshold: f64, json_output: bool, show_all_override: bool) {
     let path = PathBuf::from_str(path).unwrap();
     let package = Package::new(&path, &rm, threshold);
-    if let Some(mut result) = package.analyse_single(&path) {
+    if let Some(mut result) = package.analyse_single(&path, show_all_override) {
         // result.density_evaluator._plot();
         if json_output {
             let mut out = JsonResult::new();
-            out.add(&mut result);
+            out.add_with_fields(&mut result);
             println!("{}", out.get_json());
         } else {
             println!("{}", result.message);
@@ -60,6 +60,9 @@ struct Args {
 
     #[clap(short, long)]
     rules: Option<String>,
+
+    #[clap(short, long)]
+    all: Option<bool>,
 }
 
 fn main() {
@@ -71,11 +74,16 @@ fn main() {
     let rm = RuleManager::new(&rule_path);
 
     let json = args.json.unwrap_or(false);
+    let show_all_override = args.all.unwrap_or(false);
+
+    if show_all_override {
+        warn!("Show all bulletins override is enabled.");
+    }
 
     match args.file {
         Some(path) => {
             trace!("Analysing single file: '{}'", &path.as_str());
-            analyse_single(path.as_str(), &rm, args.threshold.unwrap_or(0f64), json);
+            analyse_single(path.as_str(), &rm, args.threshold.unwrap_or(0f64), json, show_all_override);
         }
         None => match args.package {
             Some(package) => {
@@ -84,7 +92,7 @@ fn main() {
                 // println!("{:?}", &pkg);
                 if let Some(path) = pkg {
                     debug!("Detected package: '{:?}'", &path);
-                    analyse_package(&path, &rm, args.threshold.unwrap_or(0f64), json);
+                    analyse_package(&path, &rm, args.threshold.unwrap_or(0f64), json, show_all_override);
                 } else {
                     debug!("could not find path")
                 }
