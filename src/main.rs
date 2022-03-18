@@ -24,7 +24,9 @@ fn analyse_package(
             println!("{}", out.get_json());
         } else {
             for res in result {
-                println!("{}", res.message);
+                if let Some(message) = res.message {
+                    println!("{}", message);
+                }
             }
         }
     } else {
@@ -40,7 +42,7 @@ fn analyse_single(
     show_all_override: bool,
 ) {
     let path = PathBuf::from_str(path).unwrap();
-    let package = Package::new(&path, &rm, threshold);
+    let mut package = Package::new(&path, &rm, threshold);
     if let Some(mut result) = package.analyse_single(&path, show_all_override) {
         // result.density_evaluator._plot();
         if json_output {
@@ -48,7 +50,9 @@ fn analyse_single(
             out.add_with_fields(&mut result);
             println!("{}", out.get_json());
         } else {
-            println!("{}", result.message);
+            if let Some(message) = result.message {
+                println!("{}", message);
+            }
         }
     }
 }
