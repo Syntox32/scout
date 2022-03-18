@@ -1,6 +1,6 @@
 use ast_walker::{AstVisitor, AstWalker};
 use regex::Regex;
-use rustpython_parser::ast::{Program, Statement};
+use rustpython_parser::ast::{Program, Suite};
 use rustpython_parser::error::ParseError;
 use rustpython_parser::parser;
 use std::collections::HashSet;
@@ -72,7 +72,6 @@ impl ParseErrorFixer {
 #[derive(Debug)]
 pub struct SourceFile {
     pub source_path: PathBuf,
-    pub source: String,
     loc: usize,
 
     pub constants: Vec<String>,
@@ -85,12 +84,12 @@ impl SourceFile {
         fixer: &mut ParseErrorFixer,
         source: &str,
         init_err: ParseError,
-    ) -> Result<Program, ParseError> {
+    ) -> Result<Box<Program>, ParseError> {
         if fixer.attempts_left() {
             warn!("initial error: {}", init_err);
             let source = fixer.attempt_fix(&init_err, source);
             match parser::parse_program(&source) {
-                Ok(program) => Ok(program),
+                Ok(program) => Ok(Box::new(program)),
                 Err(err) => SourceFile::try_parse(fixer, &source, err),
             }
         } else {
@@ -99,11 +98,11 @@ impl SourceFile {
         }
     }
 
-    fn parse_file(source: &str) -> Result<Program, ParseError> {
+    fn parse_file(source: &str) -> Result<Box<Program>, ParseError> {
         let result = parser::parse_program(source);
 
         match result {
-            Ok(program) => Ok(program),
+            Ok(program) => Ok(Box::new(program)),
             Err(err) => {
                 let mut error_fixer = ParseErrorFixer::new(3);
                 Ok(SourceFile::try_parse(&mut error_fixer, source, err)?)
@@ -111,11 +110,11 @@ impl SourceFile {
         }
     }
 
-    fn get_statements(source: &str) -> Result<Vec<Statement>, ParseError> {
-        Ok(SourceFile::parse_file(source)?.statements)
+    fn get_statements(source: &str) -> Result<Box<Suite>, ParseError> {
+        Ok(Box::new(SourceFile::parse_file(source)?.statements))
     }
 
-    fn visit<T>(statements: &[Statement], mut visitor: T) -> T
+    fn visit<T>(statements: &Suite, mut visitor: T) -> T
     where
         T: AstVisitor,
     {
@@ -126,23 +125,24 @@ impl SourceFile {
     pub fn load(path: &Path) -> io::Result<SourceFile> {
         let source = utils::load_from_file(&path)?;
         let statements = match SourceFile::get_statements(&source) {
-            Ok(statements) => statements,
+            Ok(statements) => Box::new(statements),
             Err(err) => {
                 let e = Error::new(std::io::ErrorKind::Other, format!("{}", err.error));
                 return Err(e);
             }
         };
-        let loc = source.lines().count().to_owned();
+        // let loc = source.lines().count().to_owned();
+        let statements: Suite = vec![];
+        let loc = 0;
 
         let mut import_visitor = SourceFile::visit(&statements, ImportVisitor::new());
         let mut function_visitor = SourceFile::visit(&statements, CallVisitor::new());
 
-        function_visitor.resolve_imports(import_visitor.get_aliases());
-        import_visitor.resolve_dynamic_imports(function_visitor.get_entries());
+        // function_visitor.resolve_imports(import_visitor.get_aliases());
+        // import_visitor.resolve_dynamic_imports(function_visitor.get_entries());
 
         let sf = SourceFile {
             source_path: path.to_path_buf(),
-            source,
             loc,
             constants: vec![],
             import_visitor,
