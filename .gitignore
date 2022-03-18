@@ -3,3 +3,4 @@ tests/
 # used for debug purposes
 conf/plot.json
 .idea/
+.vscode/
