@@ -26,19 +26,26 @@ pub fn format_empty_arg(opt: &Option<String>) -> String {
     opt.to_owned().unwrap_or_else(|| String::from("*"))
 }
 
-pub fn collect_files(path: &Path) -> Vec<DirEntry> {
-    let mut all_files: Vec<DirEntry> = vec![];
+pub fn collect_files(path: &Path) -> Box<Vec<DirEntry>> {
+    let mut all_files: Box<Vec<DirEntry>> = Box::new(vec![]);
 
     for entry in WalkDir::new(path)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_file())
     {
-        // println!("{}", entry.path().display());
         all_files.push(entry);
     }
 
     all_files
+}
+
+pub fn stack_size<T>(v: &Vec<T>) -> usize {
+    let mut s: usize = 0;
+    for entry in v {
+        s += std::mem::size_of_val(entry);
+    }
+    s
 }
 
 #[allow(unused)]
