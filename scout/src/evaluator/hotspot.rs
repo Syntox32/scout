@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::SourceFile;
+use crate::{SourceFile, utils};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Hotspot {
@@ -30,14 +30,15 @@ impl Hotspot {
         self.endx.round() as usize
     }
 
-    pub fn get_code<'a>(&self, source: &'a SourceFile) -> Vec<(usize, &'a str)> {
-        let hotspot_code: Vec<(usize, &str)> = source
-            .source
+    pub fn get_code<'a>(&self, source: &'a SourceFile) -> Vec<(usize, String)> {
+        let source = utils::load_from_file(&source.source_path).unwrap();
+        let hotspot_code: Vec<(usize, String)> = source
             .lines()
             .enumerate()
-            .collect::<Vec<(usize, &str)>>()
+            .map(|(idx, s)| (idx, s.to_owned()))
+            .collect::<Vec<(usize, String)>>()
             .drain(self.line_low()..self.line_high())
-            .collect::<Vec<(usize, &str)>>();
+            .collect::<Vec<(usize, String)>>();
         hotspot_code
     }
 }
