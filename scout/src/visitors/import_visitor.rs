@@ -2,6 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
 use ast_walker::AstVisitor;
+use rustpython_parser::ast::{Expression, Suite};
+use rustpython_parser::location;
 use rustpython_parser::{
     ast::{ExpressionType, ImportSymbol, Located, Parameters, StatementType},
     location::Location,
@@ -139,12 +141,12 @@ impl ImportVisitor {
 impl AstVisitor for ImportVisitor {
     // import os
     // import os.path as awdawd
-    fn visit_import(&mut self, stmt: &Located<StatementType>, names: &[ImportSymbol]) {
+    fn visit_import(&mut self, location: &Location, names: &Vec<ImportSymbol>) {
         for name in names {
             let entry = ImportEntry {
                 module: name.symbol.to_string(),
                 symbol: None,
-                location: stmt.location,
+                location: *location,
                 alias: name.alias.clone(),
                 context: self.get_call_context(),
                 is_dynamic: false, // default
@@ -157,10 +159,10 @@ impl AstVisitor for ImportVisitor {
     // from importlib import import_module as im
     fn visit_import_from(
         &mut self,
-        stmt: &Located<StatementType>,
+        location: &Location,
         _level: &usize,
         module: &Option<String>,
-        names: &[ImportSymbol],
+        names: &Vec<ImportSymbol>,
     ) {
         for name in names {
             let full_name = match module {
@@ -172,7 +174,7 @@ impl AstVisitor for ImportVisitor {
             let entry = ImportEntry {
                 module: full_name.clone(),
                 symbol: Some(name.symbol.to_string()),
-                location: stmt.location,
+                location: *location,
                 alias: name.alias.clone(),
                 context: self.get_call_context(),
                 is_dynamic: false, // default
@@ -184,12 +186,12 @@ impl AstVisitor for ImportVisitor {
 
     fn visit_function_def(
         &mut self,
-        _is_async: &bool,
-        _name: &str,
-        _args: &Parameters,
-        body: &[Located<StatementType>],
-        decorator_list: &[Located<ExpressionType>],
-        returns: &Option<Located<ExpressionType>>,
+        _is_async: bool,
+        _name: &String,
+        _args: &Box<Parameters>,
+        body: &Suite,
+        decorator_list: &Vec<Expression>,
+        returns: &Option<Expression>,
     ) {
         self.set_call_context(String::from("function"));
 

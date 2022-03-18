@@ -2,7 +2,7 @@ use crate::utils::format_empty_arg;
 
 use ast_walker::AstVisitor;
 use rustpython_parser::{
-    ast::{ExpressionType, Keyword, Located, Operator, StringGroup},
+    ast::{Expression, ExpressionType, Keyword, Located, Operator, StringGroup},
     location::Location,
 };
 use std::{
@@ -97,7 +97,7 @@ impl CallVisitor {
         }
     }
 
-    pub fn get_absolute_identifier(&mut self, expr: &Located<ExpressionType>) -> Option<String> {
+    pub fn get_absolute_identifier(&mut self, expr: &Box<Expression>) -> Option<String> {
         match &expr.node {
             ExpressionType::Identifier { name } => Some(name.to_owned()),
             ExpressionType::Attribute { name, value } => {
@@ -123,7 +123,7 @@ impl CallVisitor {
         }
     }
 
-    fn try_to_string(&self, expr: &Located<ExpressionType>) -> Option<String> {
+    fn try_to_string(&self, expr: &Expression) -> Option<String> {
         match &expr.node {
             // ExpressionType::Call { .. } => self.resolve_call(arg),
             ExpressionType::Binop { a, op, b } => self.resolve_binop(a, b, op),
@@ -132,7 +132,7 @@ impl CallVisitor {
         }
     }
 
-    fn resolve_args(&mut self, args: &[Located<ExpressionType>]) -> Vec<Option<String>> {
+    fn resolve_args(&mut self, args: &[Expression]) -> Vec<Option<String>> {
         // trace!("{:#?}", args);
         let results: Vec<Option<String>> = args.iter().map(|arg| self.try_to_string(arg)).collect();
         results
@@ -147,8 +147,8 @@ impl CallVisitor {
 
     fn resolve_binop(
         &self,
-        a: &Box<Located<ExpressionType>>,
-        b: &Box<Located<ExpressionType>>,
+        a: &Box<Expression>,
+        b: &Box<Expression>,
         op: &Operator,
     ) -> Option<String> {
         let aa = self.try_to_string(a)?;
@@ -168,9 +168,9 @@ impl CallVisitor {
 impl AstVisitor for CallVisitor {
     fn visit_call(
         &mut self,
-        function: &Located<ExpressionType>,
-        args: &[Located<ExpressionType>],
-        keywords: &[Keyword],
+        function: &Box<Expression>,
+        args: &Vec<Expression>,
+        keywords: &Vec<Keyword>,
     ) {
         let func = match &function.node {
             ExpressionType::Call {
@@ -205,7 +205,7 @@ impl AstVisitor for CallVisitor {
     }
 }
 
-// fn resolve_call(&mut self, call_expr: &Located<ExpressionType>) -> Option<String> {
+// fn resolve_call(&mut self, call_expr: &Expression) -> Option<String> {
 //     match &call_expr.node {
 //         ExpressionType::Call {
 //             function,
