@@ -19,7 +19,7 @@ pub struct Evaluator<'a> {
     import_rules: HashMap<String, RuleEntry<'a>>,
 }
 
-impl<'a> Evaluator<'a> {
+impl<'a, 's> Evaluator<'a> {
     pub fn new(rule_sets: &[RuleSet]) -> Evaluator {
         let mut import_rules: HashMap<String, RuleEntry> = HashMap::new();
         let mut function_rules: HashMap<String, RuleEntry> = HashMap::new();
@@ -72,7 +72,7 @@ impl<'a> Evaluator<'a> {
     //     }
     // }
 
-    pub fn check(&self, source: SourceFile, show_all_override: bool) -> EvaluatorResult {
+    pub fn check(&self, source: &'a SourceFile, show_all_override: bool) -> EvaluatorResult {
         let mut alerts_functions: i32 = 0;
         let mut alerts_imports: i32 = 0;
 
@@ -140,7 +140,7 @@ impl<'a> Evaluator<'a> {
             density_evaluator,
             bulletins,
             source,
-            message: String::from(""),
+            message: None,
             show_all: show_all_override,
         }
     }

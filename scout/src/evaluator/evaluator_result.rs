@@ -50,17 +50,17 @@ impl<'a> JsonResult<'a> {
 }
 
 #[derive(Debug)]
-pub struct EvaluatorResult {
+pub struct EvaluatorResult<'e> {
     pub alerts_functions: i32,
     pub alerts_imports: i32,
     pub density_evaluator: DensityEvaluator,
     pub bulletins: Bulletins,
-    pub source: SourceFile,
-    pub message: String,
+    pub source: &'e SourceFile,
+    pub message: Option<String>,
     pub show_all: bool,
 }
 
-impl EvaluatorResult {
+impl<'e> EvaluatorResult<'e> {
     pub fn found_anything(&self) -> bool {
         (self.alerts_functions > 0 && self.alerts_imports > 0) || !self.bulletins.is_empty()
     }
