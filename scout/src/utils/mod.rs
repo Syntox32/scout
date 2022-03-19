@@ -1,5 +1,6 @@
 use std::io::Result;
 use std::ops::Deref;
+use std::path::PathBuf;
 use std::{fs, path::Path};
 
 use walkdir::{DirEntry, WalkDir};
@@ -26,16 +27,40 @@ pub fn format_empty_arg(opt: &Option<String>) -> String {
     opt.to_owned().unwrap_or_else(|| String::from("*"))
 }
 
-pub fn collect_files(path: &Path) -> Box<Vec<DirEntry>> {
-    let mut all_files: Box<Vec<DirEntry>> = Box::new(vec![]);
+pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
+    
+    let mut all_files: Box<Vec<PathBuf>> = Box::new(vec![]);
 
-    for entry in WalkDir::new(path)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().is_file())
-    {
-        all_files.push(entry);
+    let mut count = 0;
+    for entry in WalkDir::new(path).follow_links(false) {
+        // if count > 200 {
+        //     return all_files;
+        // }
+        count += 1;
+        if let Ok(e) = entry {
+            let p = e.path().to_path_buf();
+            if p.is_file() {
+                if let Some(filename) = p.file_name() {
+                    if filename.to_str().unwrap().ends_with(ending) {
+                        all_files.push(p);
+                        // println!("{} size of all_files vec: {}", count, all_files.len());
+
+                    }
+                }
+            }
+        }
     }
+
+    // let mut count = 0;
+    // for entry in WalkDir::new(path)
+    //     .into_iter()
+    //     .filter_map(|e| e.ok())
+    //     .filter(|e| e.path().is_file())
+    //     .filter(|f| f.path().file_name().unwrap().to_str().unwrap().ends_with(ending))
+    // {
+        
+    //     all_files.push(Box::new(entry));
+    // }
 
     all_files
 }

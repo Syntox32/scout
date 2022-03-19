@@ -43,7 +43,7 @@ fn analyse_single(
 ) {
     let path = PathBuf::from_str(path).unwrap();
     let mut package = Package::new(&path, &rm, threshold);
-    if let Some(mut result) = package.analyse_single(&path, show_all_override) {
+    if let Some(mut result) = package.analyse_single(path, show_all_override) {
         // result.density_evaluator._plot();
         if json_output {
             let mut out = JsonResult::new();
@@ -95,6 +95,8 @@ fn main() {
     if show_all_override {
         warn!("Show all bulletins override is enabled.");
     }
+
+    // println!("running main thread with stack size: {}", std::rt::min_stack());
 
     match args.file {
         Some(path) => {

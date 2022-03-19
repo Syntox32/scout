@@ -4,9 +4,10 @@ use crate::{
     utils::{collect_files, stack_size},
 };
 use colored::Colorize;
+use walkdir::DirEntry;
 use std::{
     path::{Path, PathBuf},
-    str::FromStr,
+    str::FromStr, fs::{self, ReadDir}, io, result::Iter,
 };
 
 // https://stackoverflow.com/questions/25436356/how-to-loop-over-boxed-iterator
@@ -25,7 +26,7 @@ pub struct Package<'e> {
     pub path: PathBuf,
     checker: Evaluator<'e>,
     threshold: f64,
-    sources: Box<Vec<Box<SourceFile>>>,
+    sources: Box<Vec<SourceFile>>,
 }
 
 impl<'e> Package<'e> {
@@ -39,20 +40,17 @@ impl<'e> Package<'e> {
     }
 
     // TODO Add proper error handling on this one
-    fn add_sourcefile(&mut self, path: &PathBuf) -> Option<()> {
-        println!("size of all_files vec: {}", stack_size(&self.sources));
+    fn add_sourcefile(&mut self, path: PathBuf) -> Option<()> {
+        // for debugging stack sizes
+        // println!("size of sources vec (len {}): {}", self.sources.len(), stack_size(&self.sources));
 
         match SourceFile::load(path) {
             Ok(source) => {
-                self.sources.push(Box::new(source));
+                self.sources.push(source);
                 Some(())
             }
             Err(err) => {
-                error!(
-                    "Parse or load error '{}' in file '{}'",
-                    err,
-                    path.as_path().as_os_str().to_str().unwrap()
-                );
+                error!("Add source error: {}", err);
                 None
             }
         }
@@ -60,27 +58,50 @@ impl<'e> Package<'e> {
 
     fn load_sources(&mut self) {
         trace!("Ackquiring sources...");
-        let files = collect_files(&self.path);
-        for (idx, file) in files.iter().enumerate() {
-            trace!("Loaded file: {:?}", &file.path().file_name());
-            // println!("file index: {}", idx);
-            // file.path().ends_with(".py") did not work. maybe it's a bug?
-            if file
-                .path()
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .ends_with(".py")
-            {
-                trace!("Found python file: {:?}", file);
-                let p = file.path().to_path_buf();
 
-                self.add_sourcefile(&p);
-            } else {
-                trace!("file did not end with .py: {:?}", file);
+        let mut queue: Box<Vec<io::Result<ReadDir>>> = Box::new(vec![fs::read_dir(&self.path)]);
+        while !queue.is_empty() {
+            if let Some(item) = queue.pop() {
+                if let Ok(entries) = item {
+                    for entry in entries {
+                        if let Ok(dir_entry) = entry {
+                            if let Ok(ftype) = dir_entry.file_type() {
+                                if ftype.is_file() {
+                                    if dir_entry.path().file_name().unwrap().to_str().unwrap().ends_with(".py") {
+                                        // println!("{}", dir_entry.path().file_name().unwrap().to_str().unwrap());
+                                        self.add_sourcefile(dir_entry.path());
+                                    }
+                                } else if ftype.is_dir() {
+                                    queue.push(fs::read_dir(dir_entry.path()));
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    error!("Path is not a directory: {}", &self.path.as_path().to_path_buf().file_name().unwrap().to_str().unwrap());
+                }
             }
         }
+        // let files = collect_files(&self.path, ".py");
+        // for file in files.iter() {
+        //     trace!("Loading file: {:?}",file.file_name());
+        //     self.add_sourcefile(file.to_owned());
+        // }
+        //     // // println!("file index: {}", idx);
+        //     // // file.path().ends_with(".py") did not work. maybe it's a bug?
+        //     // if file
+        //     //     .file_name()
+        //     //     .unwrap()
+        //     //     .to_str()
+        //     //     .unwrap()
+        //     //     .ends_with(".py")
+        //     // {
+        //     //     trace!("Found python file: {:?}", file);
+        //     //     
+        //     // } else {
+        //     //     trace!("file did not end with .py: {:?}", file);
+        //     // }
+        // }
     }
 
     pub fn analyse(&'e mut self, show_all_override: bool) -> Option<Vec<EvaluatorResult>> {
@@ -101,7 +122,7 @@ impl<'e> Package<'e> {
 
     pub fn analyse_single(
         &'e mut self,
-        path: &PathBuf,
+        path: PathBuf,
         show_all_override: bool,
     ) -> Option<EvaluatorResult> {
         self.add_sourcefile(path)?;

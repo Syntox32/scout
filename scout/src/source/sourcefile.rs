@@ -122,8 +122,16 @@ impl SourceFile {
         visitor
     }
 
-    pub fn load(path: &Path) -> io::Result<SourceFile> {
-        let source = utils::load_from_file(&path)?;
+    pub fn load(path: PathBuf) -> io::Result<SourceFile> {
+        let source = match utils::load_from_file(&path) {
+            Ok(source) => source,
+            Err(err) => {
+                let e = Error::new(std::io::ErrorKind::Other, format!("Parse or load error '{}' in file '{}'",
+                err,
+                &path.as_os_str().to_str().unwrap()));
+                return Err(e);
+            }
+        };
         let statements = match SourceFile::get_statements(&source) {
             Ok(statements) => Box::new(statements),
             Err(err) => {
@@ -131,18 +139,18 @@ impl SourceFile {
                 return Err(e);
             }
         };
-        // let loc = source.lines().count().to_owned();
-        let statements: Suite = vec![];
-        let loc = 0;
+        let loc = source.lines().count().to_owned();
+        // let statements: Suite = vec![];
+        // let loc = 0;
 
         let mut import_visitor = SourceFile::visit(&statements, ImportVisitor::new());
         let mut function_visitor = SourceFile::visit(&statements, CallVisitor::new());
 
-        // function_visitor.resolve_imports(import_visitor.get_aliases());
-        // import_visitor.resolve_dynamic_imports(function_visitor.get_entries());
+        function_visitor.resolve_imports(import_visitor.get_aliases());
+        import_visitor.resolve_dynamic_imports(function_visitor.get_entries());
 
         let sf = SourceFile {
-            source_path: path.to_path_buf(),
+            source_path: path,
             loc,
             constants: vec![],
             import_visitor,
