@@ -63,6 +63,19 @@ pub struct EvaluatorResult<'e> {
     pub show_all: bool,
 }
 
+impl<'e> Hash for EvaluatorResult<'e> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.source.get_path().hash(state);
+    }
+}
+
+impl<'e> PartialEq for EvaluatorResult<'e> {
+    fn eq(&self, other: &Self) -> bool {
+        self.source.get_path() == other.source.get_path()
+    }
+}
+impl<'e> Eq for EvaluatorResult<'e> {}
+
 impl<'e> EvaluatorResult<'e> {
     pub fn found_anything(&self) -> bool {
         (self.alerts_functions > 0 && self.alerts_imports > 0) || !self.bulletins.is_empty()
@@ -88,6 +101,10 @@ impl<'e> EvaluatorResult<'e> {
         }
 
         false
+    }
+
+    pub fn get_source(&self) -> &SourceFile {
+        self.source
     }
 
     pub fn get_uniq_functionality(&self, bulletins: &[&Bulletin]) -> Vec<Functionality> {

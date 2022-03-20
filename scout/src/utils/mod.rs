@@ -56,7 +56,7 @@ pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
     //     .filter(|e| e.path().is_file())
     //     .filter(|f| f.path().file_name().unwrap().to_str().unwrap().ends_with(ending))
     // {
-        
+
     //     all_files.push(Box::new(entry));
     // }
 

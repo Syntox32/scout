@@ -103,7 +103,7 @@ impl<'e> Package<'e> {
         //     //     .ends_with(".py")
         //     // {
         //     //     trace!("Found python file: {:?}", file);
-        //     //     
+        //     //
         //     // } else {
         //     //     trace!("file did not end with .py: {:?}", file);
         //     // }
@@ -123,7 +123,54 @@ impl<'e> Package<'e> {
             }
         }
 
+        self.calculate_tfidf(&mut results);
+
         Some(results)
+    }
+
+    // fn sources_with_import(&self, import: &str, results: &Vec<EvaluatorResult>) -> usize {
+    //     results
+    //         .iter()
+    //         .filter(|&er| er.source.has_import(import))
+    //         .count()
+    // }
+
+    pub fn calculate_tfidf(&self, results: &mut Vec<EvaluatorResult>) {
+        let mut lookup: HashMap<&str, HashMap<&String, bool>> = HashMap::new();
+        for result in results.iter() {
+            let mut im_lookup: HashMap<&String, bool> = HashMap::new();
+            for (im, count) in result.source.get_counts() {
+                let exists = match count {
+                    0 => false,
+                    _ => true,
+                };
+                im_lookup.insert(im, exists);
+            }
+            lookup.insert(result.source.get_path(), im_lookup);
+        }
+
+        let count_sources = results.len() as f64;
+        debug!("count_sources: {}", count_sources);
+
+        for result in results.iter_mut() {
+            let term_freq: HashMap<String, f64> = result.source.calc_term_frequency_table();
+            debug!("TFIDF table for result: {:?}", term_freq);
+
+            for (im, freq) in term_freq {
+                let sources_with_im = lookup
+                    .iter()
+                    .filter(|&(_, im_lookup)| im_lookup.contains_key(&im))
+                    .count() as f64;
+                let tfidf: f64 = freq * (count_sources / sources_with_im).ln();
+                // debug!("(count_sources / sources_with_im).ln(): {}", (count_sources / sources_with_im).ln());
+                debug!(
+                    "sources with import {}: {} -> tf-idf {}",
+                    &im, sources_with_im, &tfidf
+                );
+
+                // *result.source.import_set_tfidf(im, tfid)
+            }
+        }
     }
 
     pub fn analyse_single(
@@ -133,10 +180,9 @@ impl<'e> Package<'e> {
     ) -> Option<EvaluatorResult> {
         self.add_sourcefile(path)?;
         let source = self.sources.last()?;
-        let result = self.evaluate_source(source, show_all_override)?;
-
-        Some(result)
-        // Some(self.evaluate_source(source, show_all_override)?)
+        let mut result = vec![self.evaluate_source(source, show_all_override)?];
+        self.calculate_tfidf(&mut result);
+        Some(result.pop().unwrap())
     }
 
     fn check_source(&self, source: &'e SourceFile, show_all_override: bool) -> EvaluatorResult {

@@ -130,7 +130,7 @@ impl SourceFile {
                     std::io::ErrorKind::Other,
                     format!(
                         "Parse or load error '{}' in file '{}'",
-                err,
+                        err,
                         &path.as_os_str().to_str().unwrap()
                     ),
                 );
@@ -169,6 +169,10 @@ impl SourceFile {
         self.import_visitor.get_imports()
     }
 
+    pub fn get_counts(&self) -> &HashMap<String, usize> {
+        self.import_visitor.get_counts()
+    }
+
     pub fn has_import(&self, import: &str) -> bool {
         self.import_visitor.has_import(import)
     }
@@ -185,6 +189,20 @@ impl SourceFile {
         self.source_path
             .to_str()
             .unwrap_or("<error getting filename>")
+    }
+
+    pub fn import_set_tfidf(&mut self, im: &str, tfidf: f64) {
+        self.import_visitor.set_tfidf(im, tfidf);
+    }
+
+    pub fn calc_term_frequency_table(&self) -> HashMap<String, f64> {
+        let imports = self.import_visitor.get_counts();
+        let total_imports = imports.len() as f64;
+
+        imports
+            .iter()
+            .map(|(import, im_count)| (import.to_owned(), (*im_count as f64) / total_imports))
+            .collect()
     }
 
     // pub fn _display_list(&self, list: &Vec<String>) -> String {

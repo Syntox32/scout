@@ -1,11 +1,11 @@
+use std::ascii::AsciiExt;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
 use ast_walker::AstVisitor;
 use rustpython_parser::ast::{Expression, Suite};
-use rustpython_parser::location;
 use rustpython_parser::{
-    ast::{ExpressionType, ImportSymbol, Located, Parameters, StatementType},
+    ast::{ImportSymbol, Parameters},
     location::Location,
 };
 
@@ -43,6 +43,7 @@ pub(crate) struct ImportVisitor {
     imports: HashSet<ImportEntry>,
     aliases: HashMap<String, String>,
     count: HashMap<String, usize>,
+    tf_idf: HashMap<String, f64>,
     call_context: Vec<String>, // TODO: change this to an enum?
 }
 
@@ -52,6 +53,7 @@ impl ImportVisitor {
             imports: HashSet::new(),
             aliases: HashMap::new(),
             count: HashMap::new(),
+            tf_idf: HashMap::new(),
             call_context: vec![String::from("global")],
         }
     }
@@ -69,6 +71,14 @@ impl ImportVisitor {
         &self.count
     }
 
+    pub fn has_import(&self, contains: &str) -> bool {
+        self.count.contains_key(contains)
+    }
+
+    pub fn get_count(&self, import: &str) -> Option<usize> {
+        Some(self.count.get(import)?.to_owned())
+    }
+
     fn set_call_context(&mut self, ctx: String) {
         self.call_context.push(ctx);
     }
@@ -81,19 +91,21 @@ impl ImportVisitor {
         self.call_context.pop();
     }
 
-    pub fn has_import(&self, contains: &str) -> bool {
-        self.count.contains_key(contains)
-    }
-
-    pub fn get_count(&self, import: &str) -> Option<usize> {
-        Some(self.count.get(import)?.to_owned())
-    }
-
-    pub fn add_to_count(&mut self, import: &str) {
+    fn add_to_count(&mut self, import: &str) {
         if let Some(count) = self.count.get_mut(&import.to_string()) {
             *count += 1;
         } else {
             self.count.insert(import.to_string(), 1);
+        }
+    }
+
+    pub fn get_tfidf(&self, im: &str) -> Option<&f64> {
+        self.tf_idf.get(im)
+    }
+
+    pub fn set_tfidf(&mut self, im: &str, tfidf: f64) {
+        if !self.tf_idf.contains_key(im) {
+            self.tf_idf.insert(im.to_owned(), tfidf);
         }
     }
 
