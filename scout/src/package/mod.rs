@@ -1,26 +1,15 @@
 use crate::{
     evaluator::{Evaluator, EvaluatorResult, RuleManager},
     source::SourceFile,
-    utils::{collect_files, stack_size},
 };
 use colored::Colorize;
-use walkdir::DirEntry;
 use std::{
+    collections::HashMap,
+    fs::{self, ReadDir},
+    io,
     path::{Path, PathBuf},
-    str::FromStr, fs::{self, ReadDir}, io, result::Iter,
+    str::FromStr,
 };
-
-// https://stackoverflow.com/questions/25436356/how-to-loop-over-boxed-iterator
-// trait BoxedIter<A>: Iterator {}
-// impl<A, I> BoxedIter<A> for I
-//     where I: Iterator {}
-
-// impl<A> Iterator<A> for Box<dyn BoxedIter<A>> {
-//     type Item = A;
-//     fn next(&mut self) -> Option<A> {
-//         self.next()
-//     }
-// }
 
 pub struct Package<'e> {
     pub path: PathBuf,
@@ -67,7 +56,14 @@ impl<'e> Package<'e> {
                         if let Ok(dir_entry) = entry {
                             if let Ok(ftype) = dir_entry.file_type() {
                                 if ftype.is_file() {
-                                    if dir_entry.path().file_name().unwrap().to_str().unwrap().ends_with(".py") {
+                                    if dir_entry
+                                        .path()
+                                        .file_name()
+                                        .unwrap()
+                                        .to_str()
+                                        .unwrap()
+                                        .ends_with(".py")
+                                    {
                                         // println!("{}", dir_entry.path().file_name().unwrap().to_str().unwrap());
                                         self.add_sourcefile(dir_entry.path());
                                     }
@@ -78,7 +74,17 @@ impl<'e> Package<'e> {
                         }
                     }
                 } else {
-                    error!("Path is not a directory: {}", &self.path.as_path().to_path_buf().file_name().unwrap().to_str().unwrap());
+                    error!(
+                        "Path is not a directory: {}",
+                        &self
+                            .path
+                            .as_path()
+                            .to_path_buf()
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                    );
                 }
             }
         }

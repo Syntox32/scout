@@ -3,7 +3,7 @@ use regex::Regex;
 use rustpython_parser::ast::{Program, Suite};
 use rustpython_parser::error::ParseError;
 use rustpython_parser::parser;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::{self, Error};
 use std::path::{Path, PathBuf};
 
@@ -126,9 +126,14 @@ impl SourceFile {
         let source = match utils::load_from_file(&path) {
             Ok(source) => source,
             Err(err) => {
-                let e = Error::new(std::io::ErrorKind::Other, format!("Parse or load error '{}' in file '{}'",
+                let e = Error::new(
+                    std::io::ErrorKind::Other,
+                    format!(
+                        "Parse or load error '{}' in file '{}'",
                 err,
-                &path.as_os_str().to_str().unwrap()));
+                        &path.as_os_str().to_str().unwrap()
+                    ),
+                );
                 return Err(e);
             }
         };

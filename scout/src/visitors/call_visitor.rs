@@ -2,7 +2,7 @@ use crate::utils::format_empty_arg;
 
 use ast_walker::AstVisitor;
 use rustpython_parser::{
-    ast::{Expression, ExpressionType, Keyword, Located, Operator, StringGroup},
+    ast::{Expression, ExpressionType, Keyword, Operator, StringGroup},
     location::Location,
 };
 use std::{

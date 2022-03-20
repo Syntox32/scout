@@ -4,7 +4,10 @@ use super::{
 };
 use crate::SourceFile;
 use serde::Serialize;
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    hash::{Hash, Hasher},
+};
 
 #[derive(Debug, Serialize)]
 pub struct JsonResult<'a> {

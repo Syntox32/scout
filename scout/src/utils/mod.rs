@@ -28,7 +28,6 @@ pub fn format_empty_arg(opt: &Option<String>) -> String {
 }
 
 pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
-    
     let mut all_files: Box<Vec<PathBuf>> = Box::new(vec![]);
 
     let mut count = 0;
@@ -44,7 +43,6 @@ pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
                     if filename.to_str().unwrap().ends_with(ending) {
                         all_files.push(p);
                         // println!("{} size of all_files vec: {}", count, all_files.len());
-
                     }
                 }
             }

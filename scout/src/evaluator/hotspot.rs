@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{SourceFile, utils};
+use crate::{utils, SourceFile};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Hotspot {
