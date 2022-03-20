@@ -4,3 +4,4 @@ tests/
 conf/plot.json
 .idea/
 .vscode/
+flamegraph.svg
