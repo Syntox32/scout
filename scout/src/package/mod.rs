@@ -26,7 +26,7 @@ pub struct Package<'e> {
     pub path: PathBuf,
     checker: Evaluator<'e>,
     threshold: f64,
-    sources: Box<Vec<SourceFile>>,
+    sources: Vec<SourceFile>,
 }
 
 impl<'e> Package<'e> {
@@ -35,7 +35,7 @@ impl<'e> Package<'e> {
             path: path.to_owned(),
             checker: Evaluator::new(rules.get_rule_sets()),
             threshold,
-            sources: Box::new(Vec::new()),
+            sources: Vec::new(),
         }
     }
 
