@@ -1,61 +1,8 @@
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
-
 use clap::Parser;
-use scout::{JsonResult, Package, RuleManager};
+use scout::{Engine, Result};
 
 #[macro_use]
 extern crate log;
-
-fn analyse_package(
-    path: &Path,
-    rules: &RuleManager,
-    threshold: f64,
-    json_output: bool,
-    show_all_override: bool,
-) {
-    let mut package = Package::new(path, rules, threshold);
-    if let Some(result) = package.analyse(show_all_override) {
-        if json_output {
-            let mut out = JsonResult::new();
-            for mut res in result {
-                out.add(&mut res);
-            }
-            println!("{}", out.get_json());
-        } else {
-            for res in result {
-                if let Some(message) = res.message {
-                    println!("{}", message);
-                }
-            }
-        }
-    } else {
-        warn!("something happend analysing the package");
-    }
-}
-
-fn analyse_single(
-    path: &str,
-    rm: &RuleManager,
-    threshold: f64,
-    json_output: bool,
-    show_all_override: bool,
-) {
-    let path = PathBuf::from_str(path).unwrap();
-    let mut package = Package::new(&path, &rm, threshold);
-    if let Some(mut result) = package.analyse_single(path, show_all_override) {
-        // result.density_evaluator._plot();
-        if json_output {
-            let mut out = JsonResult::new();
-            out.add_with_fields(&mut result);
-            println!("{}", out.get_json());
-        } else {
-            if let Some(message) = result.message {
-                println!("{}", message);
-            }
-        }
-    }
-}
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -81,55 +28,55 @@ struct Args {
     all: Option<bool>,
 }
 
-fn main() {
+fn main() -> Result<()> {
     pretty_env_logger::init();
     let args = Args::parse();
-    let rule_path = args
-        .rules
-        .unwrap_or(RuleManager::DEFAULT_RULE_FILE.to_string());
-    let rm = RuleManager::new(&rule_path);
-
-    let json = args.json.unwrap_or(false);
     let show_all_override = args.all.unwrap_or(false);
 
     if show_all_override {
         warn!("Show all bulletins override is enabled.");
     }
 
-    // println!("running main thread with stack size: {}", std::rt::min_stack());
+    let engine = Engine::new()
+        .set_show_all(show_all_override)
+        .set_threshold(args.threshold.unwrap_or(0f64))
+        .set_rule_path(
+            args.rules
+                .unwrap_or_else(|| Engine::get_default_rule_file())
+                .as_str(),
+        );
 
     match args.file {
-        Some(path) => {
-            trace!("Analysing single file: '{}'", &path.as_str());
-            analyse_single(
-                path.as_str(),
-                &rm,
-                args.threshold.unwrap_or(0f64),
-                json,
-                show_all_override,
-            );
-        }
-        None => match args.package {
-            Some(package) => {
-                trace!("Analysing package: '{}'", &package.as_str());
-                let pkg = Package::locate_package(package.as_str());
-                // println!("{:?}", &pkg);
-                if let Some(path) = pkg {
-                    debug!("Detected package: '{:?}'", &path);
-                    analyse_package(
-                        &path,
-                        &rm,
-                        args.threshold.unwrap_or(0f64),
-                        json,
-                        show_all_override,
-                    );
-                } else {
-                    debug!("could not find path")
+        Some(path) => match engine.analyse_file(path.as_str()) {
+            Ok(results) => match args.json {
+                Some(_) => {
+                    println!("{}", results.to_json());
+                    Ok(())
+                },
+                None => {
+                    println!("{}", results.to_string());
+                    Ok(())
                 }
             }
+            Err(err) => Err(format!("Failed to analyse file: {}", err.to_string()).into()),
+        },
+        None => match args.package {
+            Some(package) => match engine.analyse_package(package.as_str()) {
+                Ok(results) => match args.json {
+                    Some(_) => {
+                        println!("{}", results.to_json());
+                        Ok(())
+                    },
+                    None => {
+                        println!("{}", results.to_string());
+                        Ok(())
+                    }
+                },
+                Err(err) => Err(format!("Failed to analyse package: {}", err.to_string()).into()),
+            },
             None => {
                 // TODO: Rewrite this to use the clap App functionality so we can control required arguments.
-                eprintln!("Error: Either a file or a package has to be supplied as arguments.");
+                Err("Error: Either a file or a package has to be supplied as arguments.".into())
             }
         },
     }
