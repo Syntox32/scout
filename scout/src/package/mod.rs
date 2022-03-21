@@ -1,6 +1,6 @@
 use crate::{
     evaluator::{Evaluator, EvaluatorResult, RuleManager, EvaluatorCollection},
-    source::SourceFile, Result,
+    source::{SourceFile, self}, Result, utils::collect_files,
 };
 use colored::Colorize;
 use std::{
@@ -45,48 +45,54 @@ impl Package {
 
         let mut sources: Vec<SourceFile> = vec![];
 
-        let mut queue: Box<Vec<io::Result<ReadDir>>> = Box::new(vec![fs::read_dir(&self.path)]);
-        while !queue.is_empty() {
-            if let Some(item) = queue.pop() {
-                if let Ok(entries) = item {
-                    for entry in entries {
-                        if let Ok(dir_entry) = entry {
-                            if let Ok(ftype) = dir_entry.file_type() {
-                                if ftype.is_file() {
-                                    if dir_entry
-                                        .path()
-                                        .file_name()
-                                        .unwrap()
-                                        .to_str()
-                                        .unwrap()
-                                        .ends_with(".py")
-                                    {
-                                        // println!("{}", dir_entry.path().file_name().unwrap().to_str().unwrap());
-                                        match self.add_sourcefile(&dir_entry.path(), &mut sources) {
-                                            Err(err) => warn!("{}", err.to_string()),
-                                            _ => {},
-                                        }
-                                    }
-                                } else if ftype.is_dir() {
-                                    queue.push(fs::read_dir(dir_entry.path()));
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    error!(
-                        "Path is not a directory: {}",
-                        &self
-                            .path
-                            .as_path()
-                            .to_path_buf()
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                    );
-                }
-            }
+        // let mut queue: Box<Vec<io::Result<ReadDir>>> = Box::new(vec![fs::read_dir(&self.path)]);
+        // while !queue.is_empty() {
+        //     if let Some(item) = queue.pop() {
+        //         if let Ok(entries) = item {
+        //             for entry in entries {
+        //                 if let Ok(dir_entry) = entry {
+        //                     if let Ok(ftype) = dir_entry.file_type() {
+        //                         if ftype.is_file() {
+        //                             if dir_entry
+        //                                 .path()
+        //                                 .file_name()
+        //                                 .unwrap()
+        //                                 .to_str()
+        //                                 .unwrap()
+        //                                 .ends_with(".py")
+        //                             {
+        //                                 // println!("{}", dir_entry.path().file_name().unwrap().to_str().unwrap());
+        //                                 match self.add_sourcefile(&dir_entry.path(), &mut sources) {
+        //                                     Err(err) => warn!("{}", err.to_string()),
+        //                                     _ => {},
+        //                                 }
+        //                             }
+        //                         } else if ftype.is_dir() {
+        //                             queue.push(fs::read_dir(dir_entry.path()));
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         } else {
+        //             error!(
+        //                 "Path is not a directory: {}",
+        //                 &self
+        //                     .path
+        //                     .as_path()
+        //                     .to_path_buf()
+        //                     .file_name()
+        //                     .unwrap()
+        //                     .to_str()
+        //                     .unwrap()
+        //             );
+        //         }
+        //     }
+        // }
+
+        let files = collect_files(&self.path, ".py");
+        for file in files.iter() {
+            trace!("Loading file: {:?}",file.file_name());
+            let _ = self.add_sourcefile(file, &mut sources);
         }
 
         sources

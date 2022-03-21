@@ -27,7 +27,7 @@ pub fn format_empty_arg(opt: &Option<String>) -> String {
     opt.to_owned().unwrap_or_else(|| String::from("*"))
 }
 
-pub fn _collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
+pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
     let mut all_files: Box<Vec<PathBuf>> = Box::new(vec![]);
 
     let mut _count = 0;
