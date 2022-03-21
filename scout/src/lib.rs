@@ -86,7 +86,7 @@ mod engine {
                 }
             };
 
-            let results = Package::new(pkg, rule_manager, self.opt_threshold).analyse(self.opt_show_all)?;
+            let results = Package::new(pkg, rule_manager, self.opt_threshold, self.opt_show_all).analyse()?;
             Ok(results)
         }
 
@@ -104,7 +104,7 @@ mod engine {
                 }
             };
 
-            let results = Package::new(path, rule_manager, self.opt_threshold).analyse_single(self.opt_show_all)?;
+            let results = Package::new(path, rule_manager, self.opt_threshold, self.opt_show_all).analyse_single()?;
             Ok(results)
         }
     }

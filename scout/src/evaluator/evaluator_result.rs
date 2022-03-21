@@ -13,7 +13,7 @@ use std::{
 
 #[derive(Debug, Serialize)]
 pub struct JsonResult<'a> {
-    bulletins: HashMap<String, Bulletins>,
+    bulletins: HashMap<String, Vec<&'a Bulletin>>,
     hotspots: HashMap<String, Vec<Hotspot>>,
     fields: Option<&'a HashMap<FieldType, Field>>,
     combined_field: Option<Field>,
@@ -29,17 +29,22 @@ impl<'a> JsonResult<'a> {
         }
     }
 
-    pub fn add(&mut self, other: &mut EvaluatorResult) {
+    pub fn add(&mut self, other: &'a mut EvaluatorResult) {
         let source_path = other.source.get_path();
 
         self.bulletins.insert(source_path.to_string(), vec![]);
-        if let Some(bulletins) = self.bulletins.get_mut(source_path) {
-            bulletins.append(&mut other.bulletins);
-        }
-
         self.hotspots.insert(source_path.to_string(), vec![]);
-        if let Some(hotspots) = self.hotspots.get_mut(source_path) {
-            hotspots.append(&mut other.get_hotspots());
+
+        for (mut other_bulletins, hotspot) in other.bulletins_by_hotspot() {
+
+            if let Some(json_hotspots) = self.hotspots.get_mut(source_path) {
+                json_hotspots.push(hotspot);
+            }
+
+            if let Some(json_bulletins) = self.bulletins.get_mut(source_path) {
+                json_bulletins.append(&mut other_bulletins);
+                
+            }
         }
     }
 
@@ -57,11 +62,11 @@ impl<'a> JsonResult<'a> {
 pub struct EvaluatorCollection(pub Vec<EvaluatorResult>);
 
 impl<'a> EvaluatorCollection {
-    pub fn to_json(self) -> String {
+    pub fn to_json(&mut self) -> String {
         let mut out = JsonResult::new();
         let EvaluatorCollection(results) = self;
-        for mut res in results {
-            out.add(&mut res);
+        for res in results {
+            out.add(res);
         }
         out.get_json()
     }
@@ -93,6 +98,7 @@ pub struct EvaluatorResult {
     pub source: SourceFile,
     pub message: Option<String>,
     pub show_all: bool,
+    pub global_threshold: f64,
 }
 
 impl Hash for EvaluatorResult {
@@ -108,32 +114,54 @@ impl PartialEq for EvaluatorResult {
 }
 impl Eq for EvaluatorResult {}
 
-impl EvaluatorResult {
+impl<'a> EvaluatorResult {
     pub fn found_anything(&self) -> bool {
         (self.alerts_functions > 0 && self.alerts_imports > 0) || !self.bulletins.is_empty()
     }
 
-    pub fn any_bulletins_over_threshold(&self, package_threshold: f64) -> bool {
+    pub fn any_bulletins_over_threshold(&self) -> bool {
+        if self.bulletins.is_empty() {
+            return false;
+        }
+
         if self.show_all {
             return true;
         }
 
+        !self.get_visible_bulletins().is_empty()
+    }
+
+    fn bulletin_display_check(&self, bulletin: &Bulletin, hotspot: &Hotspot) -> bool {
+        (bulletin.line() >= hotspot.line_low() 
+            && bulletin.line() <= hotspot.line_high()  // if the bulletin is in the hotspot
+            && hotspot.peak()  >= bulletin.threshold
+            && hotspot.peak()  >= self.global_threshold)
+            || self.show_all
+    }
+
+    pub fn get_visible_bulletins(&self) -> Vec<&Bulletin> {
+        let mut bulletins: Vec<&Bulletin> = vec![];
         for (group, hotspot) in self.bulletins_by_hotspot() {
-            for (line, _) in hotspot.get_code(&self.source) {
-                // add 1 because  its a 0 based index because of enumerate
-                let line = line + 1;
-                for bulletin in group.iter() {
-                    if (bulletin.line() == line && hotspot.peak() >= bulletin.threshold)
-                        && hotspot.peak() > package_threshold
-                    {
-                        return true;
-                    }
+            for &bulletin in group.iter() {
+                if self.bulletin_display_check(bulletin, &hotspot) {
+                    bulletins.push(bulletin);
                 }
             }
         }
-
-        false
+        bulletins
     }
+
+    // pub fn get_visible_bulletins_mut(&mut self) -> Vec<&mut &Bulletin> {
+    //     let mut bulletins: Vec<&mut &Bulletin> = vec![];
+    //     for (group, hotspot) in self.bulletins_by_hotspot() {
+    //         for bulletin in group.iter_mut() {
+    //             if self.bulletin_display_check(bulletin, &hotspot) {
+    //                 bulletins.push(bulletin);
+    //             }
+    //         }
+    //     }
+    //     bulletins
+    // }
 
     pub fn get_source(&self) -> &SourceFile {
         &self.source
@@ -149,36 +177,42 @@ impl EvaluatorResult {
         functionality
     }
 
+    /// This is the list of bulletins before the filtering by threshold.
+    /// 
+    /// Calling this function is effectivley getting bulletins with show_all enabled.
+    pub fn get_all_bulletins(&self) -> Vec<&Bulletin> {
+        self.bulletins.iter().collect::<Vec<&Bulletin>>()
+    }
+
     pub fn get_hotspots(&self) -> Vec<Hotspot> {
         let hotspots = self.density_evaluator.hotspots();
         trace!("hotspots: {:?}", hotspots);
         hotspots
     }
 
-    pub fn bulletins_by_hotspot(&self) -> Vec<(Vec<&Bulletin>, Hotspot)> {
-        let mut groups: Vec<(Vec<&Bulletin>, Hotspot)> = vec![];
+    pub fn bulletins_by_hotspot(&'a self) -> Vec<(Vec<&'a Bulletin>, Hotspot)> {
+        let mut groups: Vec<(Vec<&'a Bulletin>, Hotspot)> = vec![];
 
         for hotspot in self.get_hotspots() {
-            let mut group: Vec<&Bulletin> = vec![];
-            for bulletin in &self.bulletins {
-                if bulletin.line() >= hotspot.line_low() && bulletin.line() <= hotspot.line_high() {
+            let mut group: Vec<&'a Bulletin> = vec![];
+            
+            for bulletin in self.bulletins.iter() {
+                if self.bulletin_display_check(bulletin, &hotspot) {
                     group.push(bulletin);
                 }
             }
-            groups.push((group, hotspot));
+
+            if !group.is_empty() {
+                groups.push((group, hotspot));
+            }
         }
 
         trace!("Bulletins by hotspot: {:?}", &groups);
         groups
     }
 
-    // return a vec with references instead of the value, will help with making this code decoupled
-    pub fn get_bulletins(&self) -> Vec<&Bulletin> {
-        self.bulletins.iter().collect::<Vec<&Bulletin>>()
-    }
-
     pub fn display_functionality(&self) {
-        for f in self.get_uniq_functionality(&self.get_bulletins()) {
+        for f in self.get_uniq_functionality(&self.get_all_bulletins()) {
             debug!("Functionality found: {:?}", f);
         }
     }

@@ -100,7 +100,7 @@ impl Evaluator {
         }
     }
 
-    pub fn check(&self, source: SourceFile, show_all_override: bool) -> EvaluatorResult {
+    pub fn check(&self, source: SourceFile, show_all_override: bool, global_threshold: f64) -> EvaluatorResult {
         let mut alerts_functions: i32 = 0;
         let mut alerts_imports: i32 = 0;
         let mut density_evaluator = DensityEvaluator::new(source.get_loc());
@@ -160,6 +160,7 @@ impl Evaluator {
             source,
             message: None,
             show_all: show_all_override,
+            global_threshold,
         }
 
         // for entry in source.get_imports() {

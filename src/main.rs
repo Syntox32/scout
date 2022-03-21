@@ -48,7 +48,7 @@ fn main() -> Result<()> {
 
     match args.file {
         Some(path) => match engine.analyse_file(path.as_str()) {
-            Ok(results) => match args.json {
+            Ok(mut results) => match args.json {
                 Some(_) => {
                     println!("{}", results.to_json());
                     Ok(())
@@ -62,7 +62,7 @@ fn main() -> Result<()> {
         },
         None => match args.package {
             Some(package) => match engine.analyse_package(package.as_str()) {
-                Ok(results) => match args.json {
+                Ok(mut results) => match args.json {
                     Some(_) => {
                         println!("{}", results.to_json());
                         Ok(())
