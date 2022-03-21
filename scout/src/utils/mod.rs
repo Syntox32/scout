@@ -3,7 +3,7 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::{fs, path::Path};
 
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
 pub fn load_from_file<P>(path: &P) -> Result<String>
 where
@@ -27,15 +27,15 @@ pub fn format_empty_arg(opt: &Option<String>) -> String {
     opt.to_owned().unwrap_or_else(|| String::from("*"))
 }
 
-pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
+pub fn _collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
     let mut all_files: Box<Vec<PathBuf>> = Box::new(vec![]);
 
-    let mut count = 0;
+    let mut _count = 0;
     for entry in WalkDir::new(path).follow_links(false) {
         // if count > 200 {
         //     return all_files;
         // }
-        count += 1;
+        // count += 1;
         if let Ok(e) = entry {
             let p = e.path().to_path_buf();
             if p.is_file() {
@@ -63,12 +63,24 @@ pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
     all_files
 }
 
-pub fn stack_size<T>(v: &Vec<T>) -> usize {
+pub fn _stack_size<T>(v: &Vec<T>) -> usize {
     let mut s: usize = 0;
     for entry in v {
         s += std::mem::size_of_val(entry);
     }
     s
+}
+
+pub fn get_last_attr(full_identifier: &str) -> &str {
+    match full_identifier
+        .split('.')
+        .collect::<Vec<&str>>()
+        .iter()
+        .last()
+    {
+        Some(last) => last,
+        None => full_identifier,
+    }
 }
 
 #[allow(unused)]
