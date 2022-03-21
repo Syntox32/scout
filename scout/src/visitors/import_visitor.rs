@@ -1,4 +1,3 @@
-use std::ascii::AsciiExt;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
