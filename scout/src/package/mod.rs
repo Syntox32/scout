@@ -1,6 +1,6 @@
 use crate::{
-    evaluator::{Evaluator, EvaluatorResult, RuleManager},
-    source::SourceFile,
+    evaluator::{Evaluator, EvaluatorResult, RuleManager, EvaluatorCollection},
+    source::SourceFile, Result,
 };
 use colored::Colorize;
 use std::{
@@ -11,42 +11,39 @@ use std::{
     str::FromStr,
 };
 
-pub struct Package<'e> {
+pub struct Package {
     pub path: PathBuf,
-    checker: Evaluator<'e>,
+    checker: Evaluator,
     threshold: f64,
-    sources: Vec<SourceFile>,
 }
 
-impl<'e> Package<'e> {
-    pub fn new(path: &Path, rules: &'e RuleManager, threshold: f64) -> Self {
+impl Package {
+    pub fn new(path: PathBuf, rules: RuleManager, threshold: f64) -> Self {
         Self {
             path: path.to_owned(),
             checker: Evaluator::new(rules.get_rule_sets()),
             threshold,
-            sources: Vec::new(),
         }
     }
 
     // TODO Add proper error handling on this one
-    fn add_sourcefile(&mut self, path: PathBuf) -> Option<()> {
+    fn add_sourcefile(&self, path: &PathBuf, target: &mut Vec<SourceFile>) -> Result<()> {
         // for debugging stack sizes
         // println!("size of sources vec (len {}): {}", self.sources.len(), stack_size(&self.sources));
 
         match SourceFile::load(path) {
             Ok(source) => {
-                self.sources.push(source);
-                Some(())
+                target.push(source);
+                Ok(())
             }
-            Err(err) => {
-                error!("Add source error: {}", err);
-                None
-            }
+            Err(err) => Err(format!("Could not add source: {}", err.to_string()).into())
         }
     }
 
-    fn load_sources(&mut self) {
+    fn load_sources(&self) -> Vec<SourceFile> {
         trace!("Ackquiring sources...");
+
+        let mut sources: Vec<SourceFile> = vec![];
 
         let mut queue: Box<Vec<io::Result<ReadDir>>> = Box::new(vec![fs::read_dir(&self.path)]);
         while !queue.is_empty() {
@@ -65,7 +62,10 @@ impl<'e> Package<'e> {
                                         .ends_with(".py")
                                     {
                                         // println!("{}", dir_entry.path().file_name().unwrap().to_str().unwrap());
-                                        self.add_sourcefile(dir_entry.path());
+                                        match self.add_sourcefile(&dir_entry.path(), &mut sources) {
+                                            Err(err) => warn!("{}", err.to_string()),
+                                            _ => {},
+                                        }
                                     }
                                 } else if ftype.is_dir() {
                                     queue.push(fs::read_dir(dir_entry.path()));
@@ -88,6 +88,8 @@ impl<'e> Package<'e> {
                 }
             }
         }
+
+        sources
         // let files = collect_files(&self.path, ".py");
         // for file in files.iter() {
         //     trace!("Loading file: {:?}",file.file_name());
@@ -110,22 +112,16 @@ impl<'e> Package<'e> {
         // }
     }
 
-    pub fn analyse(&'e mut self, show_all_override: bool) -> Option<Vec<EvaluatorResult>> {
-        self.load_sources();
-
+    pub fn analyse(self, show_all_override: bool) -> Result<EvaluatorCollection> {
         let mut results: Vec<EvaluatorResult> = vec![];
-        for source in &(*self.sources) {
-            let path = &source.get_path().to_owned();
-            if let Some(result) = self.evaluate_source(&source, show_all_override) {
-                results.push(result);
-            } else {
-                warn!("Could not evaluate source: {}", path);
-            }
+        for source in self.load_sources() {
+            let result = self.evaluate_source(source, show_all_override)?;
+            results.push(result);
         }
 
         self.calculate_tfidf(&mut results);
 
-        Some(results)
+        Ok(EvaluatorCollection(results))
     }
 
     // fn sources_with_import(&self, import: &str, results: &Vec<EvaluatorResult>) -> usize {
@@ -152,7 +148,7 @@ impl<'e> Package<'e> {
         let count_sources = results.len() as f64;
         debug!("count_sources: {}", count_sources);
 
-        for result in results.iter_mut() {
+        for result in results.iter() {
             let term_freq: HashMap<String, f64> = result.source.calc_term_frequency_table();
             debug!("TFIDF table for result: {:?}", term_freq);
 
@@ -174,25 +170,31 @@ impl<'e> Package<'e> {
     }
 
     pub fn analyse_single(
-        &'e mut self,
-        path: PathBuf,
+        &mut self,
         show_all_override: bool,
-    ) -> Option<EvaluatorResult> {
-        self.add_sourcefile(path)?;
-        let source = self.sources.last()?;
+    ) -> Result<EvaluatorCollection> {
+        trace!(
+            "Analysing single file: '{}'",
+            &self.path.as_path().as_os_str().to_str().unwrap()
+        );
+
+        let mut sources: Vec<SourceFile> = vec![];
+        self.add_sourcefile(&self.path, &mut sources)?;
+        let source = sources.pop().unwrap();
         let mut result = vec![self.evaluate_source(source, show_all_override)?];
         self.calculate_tfidf(&mut result);
-        Some(result.pop().unwrap())
+
+        Ok(EvaluatorCollection(result))
     }
 
-    fn check_source(&self, source: &'e SourceFile, show_all_override: bool) -> EvaluatorResult {
+    fn check_source(&self, source: SourceFile, show_all_override: bool) -> EvaluatorResult {
         self.checker.check(source, show_all_override)
     }
 
     fn create_evaluation_report(&self, eval_result: &EvaluatorResult) -> Option<String> {
         let mut message: String = String::from("");
 
-        trace!("Bulletins before purge: {:?}", eval_result.bulletins());
+        trace!("Bulletins before purge: {:?}", eval_result.get_bulletins());
 
         if !(eval_result.found_anything()
             && eval_result.any_bulletins_over_threshold(self.threshold))
@@ -286,19 +288,17 @@ impl<'e> Package<'e> {
     }
 
     fn evaluate_source(
-        &'e self,
-        source: &'e SourceFile,
+        &self,
+        source: SourceFile,
         show_all_override: bool,
-    ) -> Option<EvaluatorResult> {
+    ) -> Result<EvaluatorResult> {
         let mut eval_result = self.check_source(source, show_all_override);
 
-        match self.create_evaluation_report(&eval_result) {
-            Some(message) => {
-                eval_result.message = Some(message);
-                Some(eval_result)
-            }
-            None => None,
+        if let Some(report_message) = self.create_evaluation_report(&eval_result) {
+            eval_result.message = Some(report_message);
         }
+
+        Ok(eval_result)
     }
 
     fn get_package_dir(path: &Path) -> Option<PathBuf> {
@@ -313,12 +313,12 @@ impl<'e> Package<'e> {
         // }
     }
 
-    pub fn locate_package(path: &str) -> Option<Box<Path>> {
+    pub fn locate_package(path: &str) -> Option<PathBuf> {
         let p = PathBuf::from_str(path).unwrap();
         debug!("Locating package: {:?}", &p);
 
         let pkg_path = Package::get_package_dir(&p)?;
         // println!("pkg path: {}", &pkg_path.as_os_str().to_str().unwrap());
-        Some(Box::from(pkg_path))
+        Some(pkg_path)
     }
 }

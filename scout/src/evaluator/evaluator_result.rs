@@ -1,12 +1,14 @@
+use crate::SourceFile;
+
 use super::{
     density_evaluator::{DensityEvaluator, Field, FieldType},
     Bulletin, Bulletins, Functionality, Hotspot,
 };
-use crate::SourceFile;
+
 use serde::Serialize;
 use std::{
     collections::HashMap,
-    hash::{Hash, Hasher},
+    hash::{Hash, Hasher}, fmt,
 };
 
 #[derive(Debug, Serialize)]
@@ -41,42 +43,72 @@ impl<'a> JsonResult<'a> {
         }
     }
 
-    pub fn add_with_fields(&mut self, other: &'a mut EvaluatorResult) {
-        self.add(other);
-        self.fields = Some(other.density_evaluator.get_fields());
-        self.combined_field = Some(other.density_evaluator.calculate_combined_field());
-    }
+    // pub fn add_with_fields(&mut self, other: &'a mut EvaluatorResult) {
+    //     self.add(other);
+    //     self.fields = Some(other.density_evaluator.get_fields());
+    //     self.combined_field = Some(other.density_evaluator.calculate_combined_field());
+    // }
 
     pub fn get_json(&self) -> String {
         serde_json::to_string(&self).unwrap()
     }
 }
 
+pub struct EvaluatorCollection(pub Vec<EvaluatorResult>);
+
+impl<'a> EvaluatorCollection {
+    pub fn to_json(self) -> String {
+        let mut out = JsonResult::new();
+        let EvaluatorCollection(results) = self;
+        for mut res in results {
+            out.add(&mut res);
+        }
+        out.get_json()
+    }
+
+    pub fn get_results(&self) -> &Vec<EvaluatorResult> {
+        let EvaluatorCollection(results) = self;
+        &results
+    }
+}
+
+impl fmt::Display for EvaluatorCollection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut result_str: String = String::from("");
+        for result in self.get_results() {
+            if let Some(message) = &result.message {
+                result_str.push_str(message);
+            }
+        }
+        write!(f, "{}", result_str)
+    }
+}
+
 #[derive(Debug)]
-pub struct EvaluatorResult<'e> {
+pub struct EvaluatorResult {
     pub alerts_functions: i32,
     pub alerts_imports: i32,
     pub density_evaluator: DensityEvaluator,
     pub bulletins: Bulletins,
-    pub source: &'e SourceFile,
+    pub source: SourceFile,
     pub message: Option<String>,
     pub show_all: bool,
 }
 
-impl<'e> Hash for EvaluatorResult<'e> {
+impl Hash for EvaluatorResult {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.source.get_path().hash(state);
     }
 }
 
-impl<'e> PartialEq for EvaluatorResult<'e> {
+impl PartialEq for EvaluatorResult {
     fn eq(&self, other: &Self) -> bool {
         self.source.get_path() == other.source.get_path()
     }
 }
-impl<'e> Eq for EvaluatorResult<'e> {}
+impl Eq for EvaluatorResult {}
 
-impl<'e> EvaluatorResult<'e> {
+impl EvaluatorResult {
     pub fn found_anything(&self) -> bool {
         (self.alerts_functions > 0 && self.alerts_imports > 0) || !self.bulletins.is_empty()
     }
@@ -104,7 +136,7 @@ impl<'e> EvaluatorResult<'e> {
     }
 
     pub fn get_source(&self) -> &SourceFile {
-        self.source
+        &self.source
     }
 
     pub fn get_uniq_functionality(&self, bulletins: &[&Bulletin]) -> Vec<Functionality> {
@@ -141,12 +173,12 @@ impl<'e> EvaluatorResult<'e> {
     }
 
     // return a vec with references instead of the value, will help with making this code decoupled
-    pub fn bulletins(&self) -> Vec<&Bulletin> {
+    pub fn get_bulletins(&self) -> Vec<&Bulletin> {
         self.bulletins.iter().collect::<Vec<&Bulletin>>()
     }
 
     pub fn display_functionality(&self) {
-        for f in self.get_uniq_functionality(&self.bulletins()) {
+        for f in self.get_uniq_functionality(&self.get_bulletins()) {
             debug!("Functionality found: {:?}", f);
         }
     }

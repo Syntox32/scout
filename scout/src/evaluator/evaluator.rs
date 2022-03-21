@@ -1,58 +1,23 @@
 use crate::source::SourceFile;
-use crate::EvaluatorResult;
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
+use crate::visitors::{CallEntry, ImportEntry};
+use crate::{utils, EvaluatorResult};
 
 use super::density_evaluator::FieldType;
-use super::{Bulletin, BulletinReason, DensityEvaluator, Rule, RuleSet};
+use super::{Bulletin, BulletinReason, Bulletins, DensityEvaluator, Rule, RuleSet};
 
 #[derive(Debug)]
 // This is a link between the rule and the rule set for reverse lookups
 // TODO: should probably re-design this aspect of it
-pub struct RuleEntry<'a>(&'a Rule, &'a RuleSet);
+pub struct RuleEntry<'r>(&'r Rule, &'r RuleSet);
 
 #[derive(Debug)]
-pub struct Evaluator<'a> {
-    function_rules: HashMap<String, RuleEntry<'a>>,
-    import_rules: HashMap<String, RuleEntry<'a>>,
+pub struct Evaluator {
+    rule_sets: Vec<RuleSet>,
 }
 
-impl<'a, 's> Evaluator<'a> {
-    pub fn new(rule_sets: &[RuleSet]) -> Evaluator {
-        let mut import_rules: HashMap<String, RuleEntry> = HashMap::new();
-        let mut function_rules: HashMap<String, RuleEntry> = HashMap::new();
-
-        rule_sets.iter().for_each(|rs| {
-            rs.rules.iter().for_each(|rule| {
-                match rule {
-                    Rule::Module(_, identifier, _, _) => {
-                        import_rules.insert(identifier.to_string(), RuleEntry(rule, rs))
-                    }
-                    Rule::Function(_, identifier, _, _) => {
-                        function_rules.insert(identifier.to_string(), RuleEntry(rule, rs))
-                    }
-                };
-            })
-        });
-
-        Evaluator {
-            import_rules,
-            function_rules,
-        }
-    }
-
-    fn get_last_attr<'b>(&self, full_identifier: &'b str) -> &'b str {
-        match full_identifier
-            .split('.')
-            .collect::<Vec<&str>>()
-            .iter()
-            .last()
-        {
-            Some(last) => last,
-            None => full_identifier,
-        }
+impl Evaluator {
+    pub fn new(rule_sets: Vec<RuleSet>) -> Self {
+        Self { rule_sets }
     }
 
     // pub fn evaluate_all(&self, sources: Vec<SourceFile>) -> EvaluatorResult {
@@ -72,67 +37,120 @@ impl<'a, 's> Evaluator<'a> {
     //     }
     // }
 
-    pub fn check(&self, source: &'a SourceFile, show_all_override: bool) -> EvaluatorResult {
+    pub fn check_module(
+        &self,
+        entry: &ImportEntry,
+        rule: &Rule,
+        set: &RuleSet,
+        de: &mut DensityEvaluator,
+        bulletins: &mut Bulletins,
+        alerts: &mut i32,
+    ) {
+        if let Rule::Module(func, ident, _name, _desc) = rule {
+            if entry.module.to_string() == *ident {
+                let notif = Bulletin::new(
+                    ident.to_string(),
+                    BulletinReason::SuspiciousImport,
+                    entry.location,
+                    Some(*func),
+                    set.threshold,
+                );
+                bulletins.push(notif);
+                de.add_density(FieldType::Imports, entry.location.row());
+                *alerts += 1;
+
+                if entry.context == "function" {
+                    let notif = Bulletin::new(
+                        entry.module.to_string(),
+                        BulletinReason::ImportInsideFunction,
+                        entry.location,
+                        None,
+                        0.3f64,
+                    );
+                    bulletins.push(notif);
+                    de.add_density(FieldType::Imports, entry.location.row());
+                    *alerts += 1;
+                }
+            }
+        }
+    }
+
+    pub fn check_function(
+        &self,
+        entry: &CallEntry,
+        rule: &Rule,
+        set: &RuleSet,
+        de: &mut DensityEvaluator,
+        bulletins: &mut Bulletins,
+        alerts: &mut i32,
+    ) {
+        if let Rule::Function(func, ident, _name, _desc) = rule {
+            if utils::get_last_attr(entry.full_identifier.as_str()) == ident {
+                let notif = Bulletin::new(
+                    entry.full_identifier.to_string(),
+                    BulletinReason::SuspiciousFunction,
+                    entry.location,
+                    Some(*func),
+                    set.threshold,
+                );
+                bulletins.push(notif);
+                de.add_density(FieldType::Functions, entry.location.row());
+                *alerts += 1;
+            }
+        }
+    }
+
+    pub fn check(&self, source: SourceFile, show_all_override: bool) -> EvaluatorResult {
         let mut alerts_functions: i32 = 0;
         let mut alerts_imports: i32 = 0;
-
         let mut density_evaluator = DensityEvaluator::new(source.get_loc());
-        let mut bulletins = vec![];
-        let mut discovered: HashSet<String> = HashSet::new();
+        let mut bulletins: Vec<Bulletin> = vec![];
 
-        for entry in source.get_imports() {
-            self.import_rules
-                .iter()
-                .for_each(|(identifier, rule_entry)| {
-                    if entry.module.to_string() == *identifier {
-                        //&& !discovered.contains(identifier) {
-                        let notif = Bulletin::new(
-                            identifier.to_string(),
-                            BulletinReason::SuspiciousImport,
-                            entry.location,
-                            Some(rule_entry.0.functionality()),
-                            rule_entry.1.threshold,
-                        );
-                        bulletins.push(notif);
-                        density_evaluator.add_density(FieldType::Imports, entry.location.row());
-                        alerts_imports += 1;
+        for set in self.rule_sets.iter() {
 
-                        discovered.insert(identifier.to_string());
+            for entry in source.get_imports() {
+                for rule in set.get_module_rules() {
+                    self.check_module(
+                        entry,
+                        rule,
+                        set,
+                        &mut density_evaluator,
+                        &mut bulletins,
+                        &mut alerts_imports,
+                    )
+                }
+            }
 
-                        if entry.context == "function" {
-                            let notif = Bulletin::new(
-                                entry.module.to_string(),
-                                BulletinReason::ImportInsideFunction,
-                                entry.location,
-                                None,
-                                0.3f64,
-                            );
-                            bulletins.push(notif);
-                            density_evaluator.add_density(FieldType::Imports, entry.location.row());
-                            alerts_imports += 1;
-                        }
-                    }
-                });
+            for entry in source.function_visitor.get_entries() {
+                for rule in set.get_function_rules() {
+                    self.check_function(
+                        entry,
+                        rule,
+                        set,
+                        &mut density_evaluator,
+                        &mut bulletins,
+                        &mut alerts_functions,
+                    );
+                }
+            }
         }
 
-        for entry in &source.function_visitor.entries {
-            self.function_rules
-                .iter()
-                .for_each(|(identifier, rule_entry)| {
-                    if self.get_last_attr(entry.full_identifier.as_str()) == identifier {
-                        let notif = Bulletin::new(
-                            entry.full_identifier.to_string(),
-                            BulletinReason::SuspiciousFunction,
-                            entry.location,
-                            Some(rule_entry.0.functionality()),
-                            rule_entry.1.threshold,
-                        );
-                        bulletins.push(notif);
-                        density_evaluator.add_density(FieldType::Functions, entry.location.row());
-                        alerts_functions += 1;
-                    }
-                });
-        }
+        // for set in self.rule_sets.iter() {
+        //     for entry in source.function_visitor.get_entries() {
+        //         println!("call_entry {:?}", &entry);
+        //         let rules = set.get_function_rules();
+        //         for rule in rules {
+        //             self.check_function(
+        //                 entry,
+        //                 rule,
+        //                 set,
+        //                 &mut density_evaluator,
+        //                 &mut bulletins,
+        //                 &mut alerts_functions,
+        //             );
+        //         }
+        //     }
+        // }
 
         EvaluatorResult {
             alerts_functions,
@@ -143,16 +161,60 @@ impl<'a, 's> Evaluator<'a> {
             message: None,
             show_all: show_all_override,
         }
-    }
 
-    fn _create_hashset<T>(filename: T) -> HashSet<String>
-    where
-        T: AsRef<Path>,
-    {
-        let f = File::open(filename).unwrap();
-        io::BufReader::new(f)
-            .lines()
-            .map(|l| l.unwrap().replace("\n", "").to_lowercase())
-            .collect::<HashSet<String>>()
+        // for entry in source.get_imports() {
+        //     self.import_rules
+        //         .iter()
+        //         .for_each(|(identifier, rule_entry)| {
+        //             if entry.module.to_string() == *identifier {
+        //                 //&& !discovered.contains(identifier) {
+        //                 let notif = Bulletin::new(
+        //                     identifier.to_string(),
+        //                     BulletinReason::SuspiciousImport,
+        //                     entry.location,
+        //                     Some(rule_entry.0.functionality()),
+        //                     rule_entry.1.threshold,
+        //                 );
+        //                 bulletins.push(notif);
+        //                 density_evaluator.add_density(FieldType::Imports, entry.location.row());
+        //                 alerts_imports += 1;
+
+        //                 discovered.insert(identifier.to_string());
+
+        //                 if entry.context == "function" {
+        //                     let notif = Bulletin::new(
+        //                         entry.module.to_string(),
+        //                         BulletinReason::ImportInsideFunction,
+        //                         entry.location,
+        //                         None,
+        //                         0.3f64,
+        //                     );
+        //                     bulletins.push(notif);
+        //                     density_evaluator.add_density(FieldType::Imports, entry.location.row());
+        //                     alerts_imports += 1;
+        //                 }
+        //             }
+        //         });
+        // }
+
+        // for entry in &source.function_visitor.entries {
+        //     self.function_rules
+        //         .iter()
+        //         .for_each(|(identifier, rule_entry)| {
+        //             if self.get_last_attr(entry.full_identifier.as_str()) == identifier {
+        //                 let notif = Bulletin::new(
+        //                     entry.full_identifier.to_string(),
+        //                     BulletinReason::SuspiciousFunction,
+        //                     entry.location,
+        //                     Some(rule_entry.0.functionality()),
+        //                     rule_entry.1.threshold,
+        //                 );
+        //                 bulletins.push(notif);
+        //                 density_evaluator.add_density(FieldType::Functions, entry.location.row());
+        //                 alerts_functions += 1;
+        //             }
+        //         });
+        //     }
+        // }
     }
 }

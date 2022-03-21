@@ -4,10 +4,9 @@ use rustpython_parser::ast::{Program, Suite};
 use rustpython_parser::error::ParseError;
 use rustpython_parser::parser;
 use std::collections::{HashMap, HashSet};
-use std::io::{self, Error};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use crate::utils;
+use crate::{utils, Result};
 use crate::visitors::{CallVisitor, ImportEntry, ImportVisitor};
 
 pub struct ParseErrorFixer {
@@ -84,7 +83,7 @@ impl SourceFile {
         fixer: &mut ParseErrorFixer,
         source: &str,
         init_err: ParseError,
-    ) -> Result<Box<Program>, ParseError> {
+    ) -> Result<Box<Program>> {
         if fixer.attempts_left() {
             warn!("initial error: {}", init_err);
             let source = fixer.attempt_fix(&init_err, source);
@@ -94,11 +93,11 @@ impl SourceFile {
             }
         } else {
             warn!("last error: {}", init_err);
-            Err(init_err)
+            Err(init_err.into())
         }
     }
 
-    fn parse_file(source: &str) -> Result<Box<Program>, ParseError> {
+    fn parse_file(source: &str) -> Result<Box<Program>> {
         let result = parser::parse_program(source);
 
         match result {
@@ -110,7 +109,7 @@ impl SourceFile {
         }
     }
 
-    fn get_statements(source: &str) -> Result<Box<Suite>, ParseError> {
+    fn get_statements(source: &str) -> Result<Box<Suite>> {
         Ok(Box::new(SourceFile::parse_file(source)?.statements))
     }
 
@@ -122,32 +121,15 @@ impl SourceFile {
         visitor
     }
 
-    pub fn load(path: PathBuf) -> io::Result<SourceFile> {
-        let source = match utils::load_from_file(&path) {
-            Ok(source) => source,
-            Err(err) => {
-                let e = Error::new(
-                    std::io::ErrorKind::Other,
-                    format!(
-                        "Parse or load error '{}' in file '{}'",
-                        err,
-                        &path.as_os_str().to_str().unwrap()
-                    ),
-                );
-                return Err(e);
-            }
-        };
-        let statements = match SourceFile::get_statements(&source) {
-            Ok(statements) => Box::new(statements),
-            Err(err) => {
-                let e = Error::new(std::io::ErrorKind::Other, format!("{}", err.error));
-                return Err(e);
-            }
-        };
-        let loc = source.lines().count().to_owned();
-        // let statements: Suite = vec![];
-        // let loc = 0;
+    pub fn load(path: &PathBuf) -> Result<SourceFile> {
+        let source = utils::load_from_file(&path)?;
 
+        let statements = match SourceFile::get_statements(&source) {
+            Ok(statements) => statements,
+            Err(err) => return Err(format!("Failed to get statements from file: {}", err.to_string()).into()),
+        };
+
+        let loc = source.lines().count().to_owned();
         let mut import_visitor = SourceFile::visit(&statements, ImportVisitor::new());
         let mut function_visitor = SourceFile::visit(&statements, CallVisitor::new());
 
@@ -155,7 +137,7 @@ impl SourceFile {
         import_visitor.resolve_dynamic_imports(function_visitor.get_entries());
 
         let sf = SourceFile {
-            source_path: path,
+            source_path: path.to_owned(),
             loc,
             constants: vec![],
             import_visitor,
