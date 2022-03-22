@@ -1,12 +1,12 @@
 use crate::{
-    evaluator::{Evaluator, EvaluatorResult, RuleManager, EvaluatorCollection},
-    source::{SourceFile, self}, Result, utils::collect_files,
+    evaluator::{AnalysisResult, Evaluator, RuleManager, SourceAnalysis},
+    source::SourceFile,
+    utils::collect_files,
+    Result,
 };
 use colored::Colorize;
 use std::{
     collections::HashMap,
-    fs::{self, ReadDir},
-    io,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -28,17 +28,13 @@ impl Package {
         }
     }
 
-    // TODO Add proper error handling on this one
     fn add_sourcefile(&self, path: &PathBuf, target: &mut Vec<SourceFile>) -> Result<()> {
-        // for debugging stack sizes
-        // println!("size of sources vec (len {}): {}", self.sources.len(), stack_size(&self.sources));
-
         match SourceFile::load(path) {
             Ok(source) => {
                 target.push(source);
                 Ok(())
             }
-            Err(err) => Err(format!("Could not add source: {}", err.to_string()).into())
+            Err(err) => Err(format!("Could not add source: {}", err.to_string()).into()),
         }
     }
 
@@ -46,118 +42,85 @@ impl Package {
         trace!("Ackquiring sources...");
 
         let mut sources: Vec<SourceFile> = vec![];
-
-        // let mut queue: Box<Vec<io::Result<ReadDir>>> = Box::new(vec![fs::read_dir(&self.path)]);
-        // while !queue.is_empty() {
-        //     if let Some(item) = queue.pop() {
-        //         if let Ok(entries) = item {
-        //             for entry in entries {
-        //                 if let Ok(dir_entry) = entry {
-        //                     if let Ok(ftype) = dir_entry.file_type() {
-        //                         if ftype.is_file() {
-        //                             if dir_entry
-        //                                 .path()
-        //                                 .file_name()
-        //                                 .unwrap()
-        //                                 .to_str()
-        //                                 .unwrap()
-        //                                 .ends_with(".py")
-        //                             {
-        //                                 // println!("{}", dir_entry.path().file_name().unwrap().to_str().unwrap());
-        //                                 match self.add_sourcefile(&dir_entry.path(), &mut sources) {
-        //                                     Err(err) => warn!("{}", err.to_string()),
-        //                                     _ => {},
-        //                                 }
-        //                             }
-        //                         } else if ftype.is_dir() {
-        //                             queue.push(fs::read_dir(dir_entry.path()));
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         } else {
-        //             error!(
-        //                 "Path is not a directory: {}",
-        //                 &self
-        //                     .path
-        //                     .as_path()
-        //                     .to_path_buf()
-        //                     .file_name()
-        //                     .unwrap()
-        //                     .to_str()
-        //                     .unwrap()
-        //             );
-        //         }
-        //     }
-        // }
-
         let files = collect_files(&self.path, ".py");
+
         for file in files.iter() {
-            trace!("Loading file: {:?}",file.file_name());
+            trace!("Loading file: {:?}", file.file_name());
             let _ = self.add_sourcefile(file, &mut sources);
         }
 
         sources
-        // let files = collect_files(&self.path, ".py");
-        // for file in files.iter() {
-        //     trace!("Loading file: {:?}",file.file_name());
-        //     self.add_sourcefile(file.to_owned());
-        // }
-        //     // // println!("file index: {}", idx);
-        //     // // file.path().ends_with(".py") did not work. maybe it's a bug?
-        //     // if file
-        //     //     .file_name()
-        //     //     .unwrap()
-        //     //     .to_str()
-        //     //     .unwrap()
-        //     //     .ends_with(".py")
-        //     // {
-        //     //     trace!("Found python file: {:?}", file);
-        //     //
-        //     // } else {
-        //     //     trace!("file did not end with .py: {:?}", file);
-        //     // }
-        // }
     }
 
-    pub fn analyse(self) -> Result<EvaluatorCollection> {
-        let mut results: Vec<EvaluatorResult> = vec![];
-        for source in self.load_sources() {
-            if let Some(eval_result) = self.evaluate_source(source) {
-                results.push(eval_result);
+    pub fn analyse(self) -> Result<AnalysisResult> {
+        let results: Vec<SourceAnalysis> = self.run_pipeline(self.load_sources())?;
+        Ok(AnalysisResult(results))
+    }
+
+    pub fn analyse_single(&mut self) -> Result<AnalysisResult> {
+        trace!(
+            "Analysing single file: '{}'",
+            &self.path.as_path().as_os_str().to_str().unwrap()
+        );
+
+        let mut sources: Vec<SourceFile> = vec![];
+        self.add_sourcefile(&self.path, &mut sources)?;
+        let source = sources.pop().unwrap();
+
+        let result: Vec<SourceAnalysis> = self.run_pipeline(vec![source])?;
+
+        Ok(AnalysisResult(result))
+    }
+
+    fn run_pipeline(&self, sources: Vec<SourceFile>) -> Result<Vec<SourceAnalysis>> {
+        let mut analyses: Vec<SourceAnalysis> = vec![];
+
+        for source in sources {
+            analyses.push(SourceAnalysis::new(
+                source,
+                self.show_all_override,
+                self.threshold,
+            ));
+        }
+
+        self.calculate_tfidf(&mut analyses);
+
+        for analysis in analyses.iter_mut() {
+            self.checker.evaluate(analysis);
+
+            if let Some(report) = self.create_evaluation_report(&analysis) {
+                analysis.message = Some(report);
             }
         }
 
-        self.calculate_tfidf(&mut results);
+        analyses = analyses.into_iter()
+            .filter_map(|a| if a.any_bulletins_over_threshold() {
+                Some(a)
+            } else { 
+                None 
+            }).collect();
 
-        Ok(EvaluatorCollection(results))
+        Ok(analyses)
     }
 
-    // fn sources_with_import(&self, import: &str, results: &Vec<EvaluatorResult>) -> usize {
-    //     results
-    //         .iter()
-    //         .filter(|&er| er.source.has_import(import))
-    //         .count()
-    // }
-
-    pub fn calculate_tfidf(&self, results: &mut Vec<EvaluatorResult>) {
-        let mut lookup: HashMap<&str, HashMap<&String, bool>> = HashMap::new();
+    fn calculate_tfidf(&self, results: &mut Vec<SourceAnalysis>) {
+        let mut lookup: HashMap<String, HashMap<String, bool>> = HashMap::new();
         for result in results.iter() {
-            let mut im_lookup: HashMap<&String, bool> = HashMap::new();
+            let mut im_lookup: HashMap<String, bool> = HashMap::new();
             for (im, count) in result.source.get_counts() {
                 let exists = match count {
                     0 => false,
                     _ => true,
                 };
-                im_lookup.insert(im, exists);
+                im_lookup.insert(im.to_string(), exists);
             }
-            lookup.insert(result.source.get_path(), im_lookup);
+            lookup.insert(result.source.get_path().to_string(), im_lookup);
         }
 
         let count_sources = results.len() as f64;
         debug!("count_sources: {}", count_sources);
 
-        for result in results.iter() {
+        for result in results.iter_mut() {
             let term_freq: HashMap<String, f64> = result.source.calc_term_frequency_table();
             debug!("TFIDF table for result: {:?}", term_freq);
 
@@ -167,49 +130,28 @@ impl Package {
                     .filter(|&(_, im_lookup)| im_lookup.contains_key(&im))
                     .count() as f64;
                 let tfidf: f64 = freq * (count_sources / sources_with_im).ln();
-                // debug!("(count_sources / sources_with_im).ln(): {}", (count_sources / sources_with_im).ln());
+
                 debug!(
                     "sources with import {}: {} -> tf-idf {}",
                     &im, sources_with_im, &tfidf
                 );
 
-                // *result.source.import_set_tfidf(im, tfid)
+                result.source.import_set_tfidf(im.as_str(), tfidf);
             }
         }
     }
 
-    pub fn analyse_single(&mut self) -> Result<EvaluatorCollection> {
-        trace!(
-            "Analysing single file: '{}'",
-            &self.path.as_path().as_os_str().to_str().unwrap()
-        );
-
-        let mut sources: Vec<SourceFile> = vec![];
-        self.add_sourcefile(&self.path, &mut sources)?;
-        let source = sources.pop().unwrap();
-        let mut result: Vec<EvaluatorResult> = vec![];
-        if let Some(eval_result) = self.evaluate_source(source) {
-            result.push(eval_result);
-        }
-        self.calculate_tfidf(&mut result);
-
-        Ok(EvaluatorCollection(result))
-    }
-
-    fn check_source(&self, source: SourceFile) -> EvaluatorResult {
-        self.checker.check(source, self.show_all_override, self.threshold)
-    }
-
-    fn create_evaluation_report(&self, eval_result: &EvaluatorResult) -> Option<String> {
+    fn create_evaluation_report(&self, eval_result: &SourceAnalysis) -> Option<String> {
         let mut message: String = String::from("");
 
-        trace!("Bulletins before purge: {:?}", eval_result.get_all_bulletins());
+        trace!(
+            "Bulletins before purge: {:?}",
+            eval_result.get_all_bulletins()
+        );
 
         // NOTE: override check 1 happens here
         if !self.show_all_override {
-            if !(eval_result.found_anything()
-                && eval_result.any_bulletins_over_threshold())
-            {
+            if !(eval_result.found_anything() && eval_result.any_bulletins_over_threshold()) {
                 trace!(
                     "File was skipped because no bulletins showed: {}",
                     eval_result.source.get_path()
@@ -258,7 +200,8 @@ impl Package {
                 for bulletin in group.iter() {
                     // add one cause its a 0 based index because of enumerate
                     // NOTE: override check 2 happens here
-                    if (bulletin.line() == line && ((hotspot.peak() >= bulletin.threshold) || self.show_all_override))
+                    if (bulletin.line() == line
+                        && ((hotspot.peak() >= bulletin.threshold) || self.show_all_override))
                         && ((hotspot.peak() > self.threshold) || self.show_all_override)
                     {
                         if !display {
@@ -300,18 +243,6 @@ impl Package {
         Some(message)
     }
 
-    fn evaluate_source(
-        &self,
-        source: SourceFile
-    ) -> Option<EvaluatorResult> {
-        let mut eval_result = self.check_source(source);
-
-        let report = self.create_evaluation_report(&eval_result)?;
-        eval_result.message = Some(report);
-
-        Some(eval_result)
-    }
-
     fn get_package_dir(path: &Path) -> Option<PathBuf> {
         Some(path.to_path_buf())
         // match Package::detect_package_type(&path)? {
@@ -329,7 +260,6 @@ impl Package {
         debug!("Locating package: {:?}", &p);
 
         let pkg_path = Package::get_package_dir(&p)?;
-        // println!("pkg path: {}", &pkg_path.as_os_str().to_str().unwrap());
         Some(pkg_path)
     }
 }

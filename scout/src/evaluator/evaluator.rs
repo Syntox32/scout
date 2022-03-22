@@ -1,6 +1,6 @@
 use crate::source::SourceFile;
 use crate::visitors::{CallEntry, ImportEntry};
-use crate::{utils, EvaluatorResult};
+use crate::{utils, SourceAnalysis};
 
 use super::density_evaluator::FieldType;
 use super::{Bulletin, BulletinReason, Bulletins, DensityEvaluator, Rule, RuleSet};
@@ -13,11 +13,17 @@ pub struct RuleEntry<'r>(&'r Rule, &'r RuleSet);
 #[derive(Debug)]
 pub struct Evaluator {
     rule_sets: Vec<RuleSet>,
+
+    /// Enable or disable the use of the multiplier in adding curves.
+    opt_enable_multiplier: bool,
 }
 
 impl Evaluator {
     pub fn new(rule_sets: Vec<RuleSet>) -> Self {
-        Self { rule_sets }
+        Self {
+            rule_sets,
+            opt_enable_multiplier: true,
+        }
     }
 
     // pub fn evaluate_all(&self, sources: Vec<SourceFile>) -> EvaluatorResult {
@@ -37,8 +43,9 @@ impl Evaluator {
     //     }
     // }
 
-    pub fn check_module(
+    fn check_module(
         &self,
+        source: &SourceFile,
         entry: &ImportEntry,
         rule: &Rule,
         set: &RuleSet,
@@ -56,7 +63,15 @@ impl Evaluator {
                     set.threshold,
                 );
                 bulletins.push(notif);
-                de.add_density(FieldType::Imports, entry.location.row());
+
+                let multiplier: f64 = if self.opt_enable_multiplier {
+                    source.get_tfidf_value(ident).unwrap_or(&1.0f64).to_owned()
+                } else {
+                    1.0f64
+                };
+                debug!("TFIDF value for identifier {} set to {}", ident, multiplier);
+
+                de.add_density(FieldType::Imports, entry.location.row(), multiplier);
                 *alerts += 1;
 
                 if entry.context == "function" {
@@ -68,14 +83,14 @@ impl Evaluator {
                         0.3f64,
                     );
                     bulletins.push(notif);
-                    de.add_density(FieldType::Imports, entry.location.row());
+                    de.add_density(FieldType::Imports, entry.location.row(), 1.0f64);
                     *alerts += 1;
                 }
             }
         }
     }
 
-    pub fn check_function(
+    fn check_function(
         &self,
         entry: &CallEntry,
         rule: &Rule,
@@ -94,128 +109,40 @@ impl Evaluator {
                     set.threshold,
                 );
                 bulletins.push(notif);
-                de.add_density(FieldType::Functions, entry.location.row());
+                de.add_density(FieldType::Functions, entry.location.row(), 1.0f64);
                 *alerts += 1;
             }
         }
     }
 
-    pub fn check(&self, source: SourceFile, show_all_override: bool, global_threshold: f64) -> EvaluatorResult {
-        let mut alerts_functions: i32 = 0;
-        let mut alerts_imports: i32 = 0;
-        let mut density_evaluator = DensityEvaluator::new(source.get_loc());
-        let mut bulletins: Vec<Bulletin> = vec![];
-
+    pub fn evaluate(&self, analysis: &mut SourceAnalysis) {
         for set in self.rule_sets.iter() {
-
-            for entry in source.get_imports() {
+            for entry in analysis.source.get_imports() {
                 for rule in set.get_module_rules() {
                     self.check_module(
+                        &analysis.source,
                         entry,
                         rule,
                         set,
-                        &mut density_evaluator,
-                        &mut bulletins,
-                        &mut alerts_imports,
+                        &mut analysis.density_evaluator,
+                        &mut analysis.bulletins,
+                        &mut analysis.alerts_imports,
                     )
                 }
             }
 
-            for entry in source.function_visitor.get_entries() {
+            for entry in analysis.source.function_visitor.get_entries() {
                 for rule in set.get_function_rules() {
                     self.check_function(
                         entry,
                         rule,
                         set,
-                        &mut density_evaluator,
-                        &mut bulletins,
-                        &mut alerts_functions,
+                        &mut analysis.density_evaluator,
+                        &mut analysis.bulletins,
+                        &mut analysis.alerts_functions,
                     );
                 }
             }
         }
-
-        // for set in self.rule_sets.iter() {
-        //     for entry in source.function_visitor.get_entries() {
-        //         println!("call_entry {:?}", &entry);
-        //         let rules = set.get_function_rules();
-        //         for rule in rules {
-        //             self.check_function(
-        //                 entry,
-        //                 rule,
-        //                 set,
-        //                 &mut density_evaluator,
-        //                 &mut bulletins,
-        //                 &mut alerts_functions,
-        //             );
-        //         }
-        //     }
-        // }
-
-        EvaluatorResult {
-            alerts_functions,
-            alerts_imports,
-            density_evaluator,
-            bulletins,
-            source,
-            message: None,
-            show_all: show_all_override,
-            global_threshold,
-        }
-
-        // for entry in source.get_imports() {
-        //     self.import_rules
-        //         .iter()
-        //         .for_each(|(identifier, rule_entry)| {
-        //             if entry.module.to_string() == *identifier {
-        //                 //&& !discovered.contains(identifier) {
-        //                 let notif = Bulletin::new(
-        //                     identifier.to_string(),
-        //                     BulletinReason::SuspiciousImport,
-        //                     entry.location,
-        //                     Some(rule_entry.0.functionality()),
-        //                     rule_entry.1.threshold,
-        //                 );
-        //                 bulletins.push(notif);
-        //                 density_evaluator.add_density(FieldType::Imports, entry.location.row());
-        //                 alerts_imports += 1;
-
-        //                 discovered.insert(identifier.to_string());
-
-        //                 if entry.context == "function" {
-        //                     let notif = Bulletin::new(
-        //                         entry.module.to_string(),
-        //                         BulletinReason::ImportInsideFunction,
-        //                         entry.location,
-        //                         None,
-        //                         0.3f64,
-        //                     );
-        //                     bulletins.push(notif);
-        //                     density_evaluator.add_density(FieldType::Imports, entry.location.row());
-        //                     alerts_imports += 1;
-        //                 }
-        //             }
-        //         });
-        // }
-
-        // for entry in &source.function_visitor.entries {
-        //     self.function_rules
-        //         .iter()
-        //         .for_each(|(identifier, rule_entry)| {
-        //             if self.get_last_attr(entry.full_identifier.as_str()) == identifier {
-        //                 let notif = Bulletin::new(
-        //                     entry.full_identifier.to_string(),
-        //                     BulletinReason::SuspiciousFunction,
-        //                     entry.location,
-        //                     Some(rule_entry.0.functionality()),
-        //                     rule_entry.1.threshold,
-        //                 );
-        //                 bulletins.push(notif);
-        //                 density_evaluator.add_density(FieldType::Functions, entry.location.row());
-        //                 alerts_functions += 1;
-        //             }
-        //         });
-        //     }
-        // }
     }
 }

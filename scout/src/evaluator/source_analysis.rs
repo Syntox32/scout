@@ -1,14 +1,15 @@
-use crate::SourceFile;
+use crate::{Evaluator, SourceFile};
 
 use super::{
     density_evaluator::{DensityEvaluator, Field, FieldType},
-    Bulletin, Bulletins, Functionality, Hotspot,
+    evaluator, Bulletin, Bulletins, Functionality, Hotspot,
 };
 
 use serde::Serialize;
 use std::{
     collections::HashMap,
-    hash::{Hash, Hasher}, fmt,
+    fmt,
+    hash::{Hash, Hasher},
 };
 
 #[derive(Debug, Serialize)]
@@ -29,55 +30,65 @@ impl<'a> JsonResult<'a> {
         }
     }
 
-    pub fn add(&mut self, other: &'a mut EvaluatorResult) {
+    pub fn add(&mut self, other: &'a SourceAnalysis) {
         let source_path = other.source.get_path();
 
         self.bulletins.insert(source_path.to_string(), vec![]);
         self.hotspots.insert(source_path.to_string(), vec![]);
 
         for (mut other_bulletins, hotspot) in other.bulletins_by_hotspot() {
-
             if let Some(json_hotspots) = self.hotspots.get_mut(source_path) {
                 json_hotspots.push(hotspot);
             }
 
             if let Some(json_bulletins) = self.bulletins.get_mut(source_path) {
                 json_bulletins.append(&mut other_bulletins);
-                
             }
         }
     }
 
-    // pub fn add_with_fields(&mut self, other: &'a mut EvaluatorResult) {
-    //     self.add(other);
-    //     self.fields = Some(other.density_evaluator.get_fields());
-    //     self.combined_field = Some(other.density_evaluator.calculate_combined_field());
-    // }
+    pub fn add_with_fields(&mut self, other: &'a SourceAnalysis) {
+        self.add(other);
+        self.fields = Some(other.density_evaluator.get_fields());
+        self.combined_field = Some(other.density_evaluator.calculate_combined_field());
+    }
 
     pub fn get_json(&self) -> String {
         serde_json::to_string(&self).unwrap()
     }
 }
 
-pub struct EvaluatorCollection(pub Vec<EvaluatorResult>);
+pub struct AnalysisResult(pub Vec<SourceAnalysis>);
 
-impl<'a> EvaluatorCollection {
-    pub fn to_json(&mut self) -> String {
+impl<'a> AnalysisResult {
+    fn get_json(&self, with_fields: bool) -> String {
         let mut out = JsonResult::new();
-        let EvaluatorCollection(results) = self;
+        let AnalysisResult(results) = self;
         for res in results {
             out.add(res);
+
+            if with_fields {
+                out.add_with_fields(res);
+            }
         }
         out.get_json()
     }
 
-    pub fn get_results(&self) -> &Vec<EvaluatorResult> {
-        let EvaluatorCollection(results) = self;
+    pub fn to_json(&self) -> String {
+        self.get_json(false)
+    }
+
+    pub fn to_json_with_fields(&self) -> String {
+        self.get_json(true)
+    }
+
+    pub fn get_results(&self) -> &Vec<SourceAnalysis> {
+        let AnalysisResult(results) = self;
         &results
     }
 }
 
-impl fmt::Display for EvaluatorCollection {
+impl fmt::Display for AnalysisResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut result_str: String = String::from("");
         for result in self.get_results() {
@@ -90,7 +101,7 @@ impl fmt::Display for EvaluatorCollection {
 }
 
 #[derive(Debug)]
-pub struct EvaluatorResult {
+pub struct SourceAnalysis {
     pub alerts_functions: i32,
     pub alerts_imports: i32,
     pub density_evaluator: DensityEvaluator,
@@ -101,20 +112,33 @@ pub struct EvaluatorResult {
     pub global_threshold: f64,
 }
 
-impl Hash for EvaluatorResult {
+impl Hash for SourceAnalysis {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.source.get_path().hash(state);
     }
 }
 
-impl PartialEq for EvaluatorResult {
+impl PartialEq for SourceAnalysis {
     fn eq(&self, other: &Self) -> bool {
         self.source.get_path() == other.source.get_path()
     }
 }
-impl Eq for EvaluatorResult {}
+impl Eq for SourceAnalysis {}
 
-impl<'a> EvaluatorResult {
+impl<'a> SourceAnalysis {
+    pub fn new(source: SourceFile, show_all_override: bool, global_threshold: f64) -> Self {
+        Self {
+            alerts_functions: 0,
+            alerts_imports: 0,
+            density_evaluator: DensityEvaluator::new(source.get_loc()),
+            bulletins: vec![],
+            source,
+            message: None,
+            show_all: show_all_override,
+            global_threshold,
+        }
+    }
+
     pub fn found_anything(&self) -> bool {
         (self.alerts_functions > 0 && self.alerts_imports > 0) || !self.bulletins.is_empty()
     }
@@ -132,10 +156,10 @@ impl<'a> EvaluatorResult {
     }
 
     fn bulletin_display_check(&self, bulletin: &Bulletin, hotspot: &Hotspot) -> bool {
-        (bulletin.line() >= hotspot.line_low() 
-            && bulletin.line() <= hotspot.line_high()  // if the bulletin is in the hotspot
-            && hotspot.peak()  >= bulletin.threshold
-            && hotspot.peak()  >= self.global_threshold)
+        (bulletin.line() >= hotspot.line_low()
+            && bulletin.line() <= hotspot.line_high()
+            && hotspot.peak() >= bulletin.threshold
+            && hotspot.peak() >= self.global_threshold)
             || self.show_all
     }
 
@@ -150,18 +174,6 @@ impl<'a> EvaluatorResult {
         }
         bulletins
     }
-
-    // pub fn get_visible_bulletins_mut(&mut self) -> Vec<&mut &Bulletin> {
-    //     let mut bulletins: Vec<&mut &Bulletin> = vec![];
-    //     for (group, hotspot) in self.bulletins_by_hotspot() {
-    //         for bulletin in group.iter_mut() {
-    //             if self.bulletin_display_check(bulletin, &hotspot) {
-    //                 bulletins.push(bulletin);
-    //             }
-    //         }
-    //     }
-    //     bulletins
-    // }
 
     pub fn get_source(&self) -> &SourceFile {
         &self.source
@@ -178,7 +190,7 @@ impl<'a> EvaluatorResult {
     }
 
     /// This is the list of bulletins before the filtering by threshold.
-    /// 
+    ///
     /// Calling this function is effectivley getting bulletins with show_all enabled.
     pub fn get_all_bulletins(&self) -> Vec<&Bulletin> {
         self.bulletins.iter().collect::<Vec<&Bulletin>>()
@@ -195,7 +207,7 @@ impl<'a> EvaluatorResult {
 
         for hotspot in self.get_hotspots() {
             let mut group: Vec<&'a Bulletin> = vec![];
-            
+
             for bulletin in self.bulletins.iter() {
                 if self.bulletin_display_check(bulletin, &hotspot) {
                     group.push(bulletin);

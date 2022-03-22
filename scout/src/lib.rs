@@ -7,7 +7,7 @@ mod visitors;
 #[macro_use]
 extern crate log;
 
-pub use evaluator::{Evaluator, EvaluatorResult, RuleManager};
+pub use evaluator::{Evaluator, RuleManager, SourceAnalysis};
 pub use package::Package;
 pub use source::SourceFile;
 
@@ -20,8 +20,8 @@ mod engine {
 
     use std::{path::PathBuf, str::FromStr};
 
+    use crate::evaluator::AnalysisResult;
     use crate::Result;
-    use crate::evaluator::EvaluatorCollection;
     use crate::{Package, RuleManager};
 
     pub struct Engine {
@@ -65,7 +65,7 @@ mod engine {
             Ok(RuleManager::new(self.rule_path.as_str())?)
         }
 
-        pub fn analyse_package(self, path: &str) -> Result<EvaluatorCollection> {
+        pub fn analyse_package(self, path: &str) -> Result<AnalysisResult> {
             trace!("Analysing package: '{}'", &path);
             let pkg = match Package::locate_package(&path) {
                 Some(path) => {
@@ -86,11 +86,12 @@ mod engine {
                 }
             };
 
-            let results = Package::new(pkg, rule_manager, self.opt_threshold, self.opt_show_all).analyse()?;
+            let results =
+                Package::new(pkg, rule_manager, self.opt_threshold, self.opt_show_all).analyse()?;
             Ok(results)
         }
 
-        pub fn analyse_file(self, path: &str) -> Result<EvaluatorCollection> {
+        pub fn analyse_file(self, path: &str) -> Result<AnalysisResult> {
             let path = PathBuf::from_str(path)?;
 
             let rule_manager = match self.get_rule_manager() {
@@ -104,7 +105,8 @@ mod engine {
                 }
             };
 
-            let results = Package::new(path, rule_manager, self.opt_threshold, self.opt_show_all).analyse_single()?;
+            let results = Package::new(path, rule_manager, self.opt_threshold, self.opt_show_all)
+                .analyse_single()?;
             Ok(results)
         }
     }

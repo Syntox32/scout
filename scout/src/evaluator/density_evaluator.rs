@@ -76,9 +76,9 @@ impl Field {
         }
     }
 
-    fn add_density(&mut self, line: f64, variance: f64) {
+    fn add_density(&mut self, line: f64, variance: f64, multiplier: f64) {
         for (y, x) in self.y.iter_mut().zip(self.x.iter_mut()) {
-            *y += gaussian_density(*x, line, variance);
+            *y += gaussian_density(*x, line, variance) * multiplier;
         }
     }
 
@@ -194,10 +194,10 @@ impl DensityEvaluator {
         &self.fields
     }
 
-    pub fn add_density(&mut self, field_type: FieldType, row: usize) {
+    pub fn add_density(&mut self, field_type: FieldType, row: usize, multiplier: f64) {
         let field = self.fields.get_mut(&field_type).unwrap();
         let line: f64 = row as f64;
-        field.add_density(line, DensityEvaluator::VARIANCE);
+        field.add_density(line, DensityEvaluator::VARIANCE, multiplier);
     }
 
     pub fn calculate_combined_field(&self) -> Field {

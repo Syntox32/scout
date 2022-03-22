@@ -6,8 +6,8 @@ use rustpython_parser::parser;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
-use crate::{utils, Result};
 use crate::visitors::{CallVisitor, ImportEntry, ImportVisitor};
+use crate::{utils, Result};
 
 pub struct ParseErrorFixer {
     attempts: i32,
@@ -126,7 +126,11 @@ impl SourceFile {
 
         let statements = match SourceFile::get_statements(&source) {
             Ok(statements) => statements,
-            Err(err) => return Err(format!("Failed to get statements from file: {}", err.to_string()).into()),
+            Err(err) => {
+                return Err(
+                    format!("Failed to get statements from file: {}", err.to_string()).into(),
+                )
+            }
         };
 
         let loc = source.lines().count().to_owned();
@@ -171,6 +175,10 @@ impl SourceFile {
         self.source_path
             .to_str()
             .unwrap_or("<error getting filename>")
+    }
+
+    pub fn get_tfidf_value(&self, import: &str) -> Option<&f64> {
+        self.import_visitor.get_tfidf(import)
     }
 
     pub fn import_set_tfidf(&mut self, im: &str, tfidf: f64) {

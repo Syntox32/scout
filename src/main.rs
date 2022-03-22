@@ -26,12 +26,16 @@ struct Args {
 
     #[clap(short, long)]
     all: Option<bool>,
+
+    #[clap(long)]
+    fields: Option<bool>,
 }
 
 fn main() -> Result<()> {
     pretty_env_logger::init();
     let args = Args::parse();
     let show_all_override = args.all.unwrap_or(false);
+    let include_fields = args.fields.unwrap_or(false);
 
     if show_all_override {
         warn!("Show all bulletins override is enabled.");
@@ -48,25 +52,34 @@ fn main() -> Result<()> {
 
     match args.file {
         Some(path) => match engine.analyse_file(path.as_str()) {
-            Ok(mut results) => match args.json {
+            Ok(results) => match args.json {
                 Some(_) => {
-                    println!("{}", results.to_json());
+                    let result = if include_fields {
+                        results.to_json_with_fields()
+                    } else {
+                        results.to_json()
+                    };
+
+                    println!("{}", result);
                     Ok(())
-                },
+                }
                 None => {
                     println!("{}", results.to_string());
                     Ok(())
                 }
-            }
+            },
             Err(err) => Err(format!("Failed to analyse file: {}", err.to_string()).into()),
         },
         None => match args.package {
             Some(package) => match engine.analyse_package(package.as_str()) {
-                Ok(mut results) => match args.json {
+                Ok(results) => match args.json {
                     Some(_) => {
+                        if include_fields {
+                            warn!("with_fields is only supported for single files only.");
+                        }
                         println!("{}", results.to_json());
                         Ok(())
-                    },
+                    }
                     None => {
                         println!("{}", results.to_string());
                         Ok(())
