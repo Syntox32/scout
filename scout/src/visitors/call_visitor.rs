@@ -53,8 +53,10 @@ impl Eq for CallEntry {}
 
 #[derive(Debug)]
 pub struct CallVisitor {
-    pub entries: Vec<CallEntry>,
-    pub errors: Vec<(String, Location)>,
+    entries: Vec<CallEntry>,
+    errors: Vec<(String, Location)>,
+    count: HashMap<String, usize>,
+    tf_idf: HashMap<String, f64>,
 }
 
 impl CallVisitor {
@@ -62,6 +64,8 @@ impl CallVisitor {
         Self {
             entries: vec![],
             errors: vec![],
+            count: HashMap::new(),
+            tf_idf: HashMap::new(),
         }
     }
 
@@ -76,8 +80,35 @@ impl CallVisitor {
         false
     }
 
+    pub fn get_counts(&self) -> &HashMap<String, usize> {
+        &self.count
+    }
+
+    pub fn get_tfidf(&self, call: &str) -> Option<&f64> {
+        self.tf_idf.get(call)
+    }
+
+    pub fn set_tfidf(&mut self, call: &str, tfidf: f64) {
+        if !self.tf_idf.contains_key(call) {
+            self.tf_idf.insert(call.to_owned(), tfidf);
+        }
+    }
+
     pub fn get_entries(&self) -> &Vec<CallEntry> {
         &self.entries
+    }
+
+    fn add_to_count(&mut self, entry: &CallEntry) {
+        if let Some(count) = self.count.get_mut(entry.get_identifier()) {
+            *count += 1;
+        } else {
+            self.count.insert(entry.get_identifier().to_owned(), 1);
+        }
+    }
+
+    fn add_call_entry(&mut self, entry: CallEntry) {
+        self.add_to_count(&entry);
+        self.entries.push(entry);
     }
 
     pub fn resolve_imports(&mut self, aliases: &HashMap<String, String>) {
@@ -193,7 +224,7 @@ impl AstVisitor for CallVisitor {
                 args,
             };
 
-            self.entries.push(entry);
+            self.add_call_entry(entry);
         }
 
         // boilerplate
@@ -204,44 +235,3 @@ impl AstVisitor for CallVisitor {
             .for_each(|kw| self.walk_expression(&kw.value));
     }
 }
-
-// fn resolve_call(&mut self, call_expr: &Expression) -> Option<String> {
-//     match &call_expr.node {
-//         ExpressionType::Call {
-//             function,
-//             args,
-//             keywords,
-//         } => {
-//             let fname = get_absolute_identifier(function.as_ref())?;
-//             let fargs = self.resolve_args(&args);
-//             let f = format!("{}({})", fname, fargs.join(", "));
-//             // self.function_calls.insert(fname, fargs);
-//             return Some(f);
-//         }
-//         _ => panic!(
-//             "resolve_call only expects call expressions: {}",
-//             call_expr.name()
-//         ),
-//     }
-// }
-
-// fn find_function_visitor(&mut self) -> io::Result<()> {
-//     for statement in self.get_statements()? {
-//         match statement.node {
-//             StatementType::Expression { expression } => match expression.node {
-//                 ExpressionType::Attribute { value: _, name } => {
-//                     println!("attr name: {}", name);
-//                 }
-//                 ExpressionType::Identifier { name } => {
-//                     println!("attr name: {}", name);
-//                 }
-//                 ExpressionType::Call { .. } => {
-//                     self.resolve_call(&expression);
-//                 }
-//                 _ => println!("unhandled expr name: {}", &expression.name()),
-//             },
-//             _ => {}
-//         }
-//     }
-//     Ok(())
-// }

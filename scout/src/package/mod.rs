@@ -83,7 +83,8 @@ impl Package {
             ));
         }
 
-        self.calculate_tfidf(&mut analyses);
+        self.calculate_import_tfidf(&mut analyses);
+        self.calculate_call_tfidf(&mut analyses);
 
         for analysis in analyses.iter_mut() {
             self.checker.evaluate(analysis);
@@ -103,11 +104,11 @@ impl Package {
         Ok(analyses)
     }
 
-    fn calculate_tfidf(&self, results: &mut Vec<SourceAnalysis>) {
+    fn calculate_import_tfidf(&self, results: &mut Vec<SourceAnalysis>) {
         let mut lookup: HashMap<String, HashMap<String, bool>> = HashMap::new();
         for result in results.iter() {
             let mut im_lookup: HashMap<String, bool> = HashMap::new();
-            for (im, count) in result.source.get_counts() {
+            for (im, count) in result.source.get_import_counts() {
                 let exists = match count {
                     0 => false,
                     _ => true,
@@ -121,7 +122,7 @@ impl Package {
         debug!("count_sources: {}", count_sources);
 
         for result in results.iter_mut() {
-            let term_freq: HashMap<String, f64> = result.source.calc_term_frequency_table();
+            let term_freq: HashMap<String, f64> = result.source.import_term_frequency_table();
             debug!("TFIDF table for result: {:?}", term_freq);
 
             for (im, freq) in term_freq {
@@ -136,7 +137,59 @@ impl Package {
                     &im, sources_with_im, &tfidf
                 );
 
-                result.source.import_set_tfidf(im.as_str(), tfidf);
+                result.source.set_import_tfidf(im.as_str(), tfidf);
+            }
+        }
+    }
+
+    fn calc_df(&self, num_cases: f64, cases_with_term: f64) -> f64 {
+        cases_with_term / num_cases
+    }
+
+    fn calc_idf(&self, num_cases: f64, cases_with_term: f64) -> f64 {
+        (num_cases / cases_with_term).ln()
+    }
+
+    fn calc_idf_smooth(&self, num_cases: f64, cases_with_term: f64) -> f64 {
+        (num_cases / (1.0f64 + cases_with_term)).ln() + 1.0f64
+    }
+
+    fn calculate_call_tfidf(&self, results: &mut Vec<SourceAnalysis>) {
+        let mut lookup: HashMap<String, HashMap<String, bool>> = HashMap::new();
+        for result in results.iter() {
+            let mut call_lookup: HashMap<String, bool> = HashMap::new();
+            for (call, count) in result.source.get_call_counts() {
+                let exists = match count {
+                    0 => false,
+                    _ => true,
+                };
+                call_lookup.insert(call.to_string(), exists);
+            }
+            lookup.insert(result.source.get_path().to_string(), call_lookup);
+        }
+
+        let count_sources = results.len() as f64;
+        debug!("count_sources: {}", count_sources);
+
+        for result in results.iter_mut() {
+            let term_freq: HashMap<String, f64> = result.source.calc_term_frequency_table();
+            debug!("TFIDF table for result: {:?}", term_freq);
+
+            for (call, freq) in term_freq {
+                let sources_with_call = lookup
+                    .iter()
+                    .filter(|&(_, call_lookup)| call_lookup.contains_key(&call))
+                    .count() as f64;
+                // let idf: f64 = self.calc_idf(count_sources, sources_with_call);
+                let idf: f64 = self.calc_df(count_sources, sources_with_call);
+                let tfidf: f64 = freq * idf;
+
+                debug!(
+                    "sources with import {}: {} -> tf-idf {}",
+                    &call, sources_with_call, &tfidf
+                );
+
+                result.source.set_call_tfidf(call.as_str(), tfidf);
             }
         }
     }
@@ -163,11 +216,11 @@ impl Package {
         eval_result.display_functionality();
         debug!(
             "Functions found in source file: [{}]",
-            eval_result.source._display_functions()
+            eval_result.source.display_functions()
         );
         debug!(
             "Imports found in source file: [{}]",
-            eval_result.source._display_imports()
+            eval_result.source.display_imports()
         );
         trace!(
             "Bulletins by hotspots: {:?}",

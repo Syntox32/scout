@@ -6,7 +6,7 @@ use rustpython_parser::parser;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
-use crate::visitors::{CallVisitor, ImportEntry, ImportVisitor};
+use crate::visitors::{CallVisitor, ImportEntry, ImportVisitor, CallEntry};
 use crate::{utils, Result};
 
 pub struct ParseErrorFixer {
@@ -75,7 +75,7 @@ pub struct SourceFile {
 
     pub constants: Vec<String>,
     import_visitor: ImportVisitor,
-    pub function_visitor: CallVisitor,
+    call_visitor: CallVisitor,
 }
 
 impl SourceFile {
@@ -145,26 +145,10 @@ impl SourceFile {
             loc,
             constants: vec![],
             import_visitor,
-            function_visitor,
+            call_visitor: function_visitor,
         };
 
         Ok(sf)
-    }
-
-    pub fn get_imports(&self) -> &HashSet<ImportEntry> {
-        self.import_visitor.get_imports()
-    }
-
-    pub fn get_counts(&self) -> &HashMap<String, usize> {
-        self.import_visitor.get_counts()
-    }
-
-    pub fn has_import(&self, import: &str) -> bool {
-        self.import_visitor.has_import(import)
-    }
-
-    pub fn get_count(&self, import: &str) -> Option<usize> {
-        self.import_visitor.get_count(import)
     }
 
     pub fn get_loc(&self) -> usize {
@@ -177,15 +161,54 @@ impl SourceFile {
             .unwrap_or("<error getting filename>")
     }
 
-    pub fn get_tfidf_value(&self, import: &str) -> Option<&f64> {
+    pub fn display_functions(&self) -> String {
+        self.call_visitor
+            .get_entries()
+            .iter()
+            .map(|entry| entry.full_identifier.to_string())
+            .collect::<Vec<String>>()
+            .join(", ")
+    }
+
+    pub fn display_imports(&self) -> String {
+        self.import_visitor
+            .get_counts()
+            .iter()
+            .map(|(ident, _)| ident.to_string())
+            .collect::<Vec<String>>()
+            .join(", ")
+    }
+}
+
+///
+/// ImportVisitor functions for TFIDF
+/// 
+impl SourceFile {
+    pub fn get_imports(&self) -> &HashSet<ImportEntry> {
+        self.import_visitor.get_imports()
+    }
+
+    pub fn get_import_counts(&self) -> &HashMap<String, usize> {
+        self.import_visitor.get_counts()
+    }
+
+    pub fn has_import(&self, import: &str) -> bool {
+        self.import_visitor.has_import(import)
+    }
+
+    pub fn get_import_count(&self, import: &str) -> Option<usize> {
+        self.import_visitor.get_count(import)
+    }
+
+    pub fn get_import_tfidf(&self, import: &str) -> Option<&f64> {
         self.import_visitor.get_tfidf(import)
     }
 
-    pub fn import_set_tfidf(&mut self, im: &str, tfidf: f64) {
+    pub fn set_import_tfidf(&mut self, im: &str, tfidf: f64) {
         self.import_visitor.set_tfidf(im, tfidf);
     }
 
-    pub fn calc_term_frequency_table(&self) -> HashMap<String, f64> {
+    pub fn import_term_frequency_table(&self) -> HashMap<String, f64> {
         let imports = self.import_visitor.get_counts();
         let total_imports = imports.len() as f64;
 
@@ -194,27 +217,39 @@ impl SourceFile {
             .map(|(import, im_count)| (import.to_owned(), (*im_count as f64) / total_imports))
             .collect()
     }
+}
 
-    // pub fn _display_list(&self, list: &Vec<String>) -> String {
-    //     let indented = utils::indent(&list, String::from("\t"));
-    //     indented.join("\n")
-    // }
-
-    pub fn _display_functions(&self) -> String {
-        self.function_visitor
-            .entries
-            .iter()
-            .map(|entry| entry.full_identifier.to_string())
-            .collect::<Vec<String>>()
-            .join(", ")
+///
+/// CallVisitor functions for TFIDF
+/// 
+impl SourceFile {
+    pub fn has_function(&self, function: &str) -> bool {
+        self.call_visitor.has_function(function)
     }
 
-    pub fn _display_imports(&self) -> String {
-        self.import_visitor
-            .get_counts()
+    pub fn get_entries(&self) -> &Vec<CallEntry> {
+        &self.call_visitor.get_entries()
+    }
+
+    pub fn get_call_counts(&self) -> &HashMap<String, usize> {
+        self.call_visitor.get_counts()
+    }
+
+    pub fn get_call_tfidf(&self, call: &str) -> Option<&f64> {
+        self.call_visitor.get_tfidf(call)
+    }
+
+    pub fn set_call_tfidf(&mut self, call: &str, tfidf: f64) {
+        self.call_visitor.set_tfidf(call, tfidf);
+    }
+
+    pub fn calc_term_frequency_table(&self) -> HashMap<String, f64> {
+        let call_counts = self.call_visitor.get_counts();
+        let total_num_calls = call_counts.len() as f64;
+
+        call_counts
             .iter()
-            .map(|(ident, _)| ident.to_string())
-            .collect::<Vec<String>>()
-            .join(", ")
+            .map(|(call, call_count)| (call.to_owned(), (*call_count as f64) / total_num_calls))
+            .collect()
     }
 }

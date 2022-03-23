@@ -90,8 +90,9 @@ impl Evaluator {
         }
     }
 
-    fn check_function(
+    fn rule_check_function(
         &self,
+        source: &SourceFile,
         entry: &CallEntry,
         rule: &Rule,
         set: &RuleSet,
@@ -109,7 +110,15 @@ impl Evaluator {
                     set.threshold,
                 );
                 bulletins.push(notif);
-                de.add_density(FieldType::Functions, entry.location.row(), 1.0f64);
+
+                let multiplier: f64 = if self.opt_enable_multiplier {
+                    source.get_call_tfidf(entry.get_identifier().as_str()).unwrap_or(&1.0f64).to_owned()
+                } else {
+                    1.0f64
+                };
+                debug!("TFIDF value for identifier {} set to {}", entry.get_identifier().as_str(), multiplier);
+
+                de.add_density(FieldType::Functions, entry.location.row(), multiplier);
                 *alerts += 1;
             }
         }
@@ -131,9 +140,10 @@ impl Evaluator {
                 }
             }
 
-            for entry in analysis.source.function_visitor.get_entries() {
+            for entry in analysis.source.get_entries() {
                 for rule in set.get_function_rules() {
-                    self.check_function(
+                    self.rule_check_function(
+                        &analysis.source,
                         entry,
                         rule,
                         set,
