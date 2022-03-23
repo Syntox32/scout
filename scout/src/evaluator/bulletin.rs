@@ -8,6 +8,7 @@ pub enum BulletinReason {
     SuspiciousImport,
     SuspiciousFunction,
     ImportInsideFunction,
+    DynamicImport,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,6 +64,9 @@ impl Bulletin {
             BulletinReason::ImportInsideFunction => {
                 "Importing inside classes and functions might be done to hide functionality"
                     .to_string()
+            },
+            BulletinReason::DynamicImport => {
+                "Functionality was dynamically imported (at runtime). This can be used to obfuscate malicious activity.".to_string()
             }
         }
     }

@@ -64,9 +64,9 @@ impl Field {
         }
 
         mult(&funcs.y, &funcs.multiplier, &mut combined_y);
-        mult(&imports.y, &imports.multiplier, &mut combined_y);
-        mult(&behavior.y, &behavior.multiplier, &mut combined_y);
-        mult(&strings.y, &strings.multiplier, &mut combined_y);
+        // mult(&imports.y, &imports.multiplier, &mut combined_y);
+        // mult(&behavior.y, &behavior.multiplier, &mut combined_y);
+        // mult(&strings.y, &strings.multiplier, &mut combined_y);
 
         Self {
             multiplier: multiplier,
@@ -78,7 +78,8 @@ impl Field {
 
     fn add_density(&mut self, line: f64, variance: f64, multiplier: f64) {
         for (y, x) in self.y.iter_mut().zip(self.x.iter_mut()) {
-            *y += gaussian_density(*x, line, variance) * multiplier;
+            *y += gaussian_density(*x, line, variance);
+            *y *= multiplier;
         }
     }
 
@@ -141,13 +142,13 @@ pub struct DensityEvaluator {
 }
 
 impl DensityEvaluator {
-    const RESOLUTION: f64 = 1.0;
+    const RESOLUTION: f64 = 0.5;
     const VARIANCE: f64 = 5.0;
     const HOTSPOT_THRESHOLD: f64 = 0.01;
 
     pub fn new(loc: usize) -> Self {
         let mut mult_map: HashMap<FieldType, f64> = HashMap::new();
-        mult_map.insert(FieldType::Functions, 1.0);
+        mult_map.insert(FieldType::Functions, 1.5);
         mult_map.insert(FieldType::Imports, 1.0);
         mult_map.insert(FieldType::Behavior, 1.0);
         mult_map.insert(FieldType::Strings, 1.0);

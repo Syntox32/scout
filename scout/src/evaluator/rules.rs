@@ -14,6 +14,7 @@ pub enum Functionality {
     Network,
     Process,
     System,
+    NotSpecific,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

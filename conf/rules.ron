@@ -54,6 +54,8 @@
         Module(System, "os", None, None),
     ]),
     ( name: "Misc. suspicious rules", threshold: 0.20, rules: [
+        Module(NotSpecific, "builtins", None, None), // importing builtins is not very common
+
         Module(System, "importlib", None, None),
         Module(System, "marshal", None, None),
         Function(System, "marshal.load", None, None),

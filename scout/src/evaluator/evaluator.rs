@@ -26,24 +26,7 @@ impl Evaluator {
         }
     }
 
-    // pub fn evaluate_all(&self, sources: Vec<SourceFile>) -> EvaluatorResult {
-    //     let mut alerts_functions: i32 = 0;
-    //     let mut alerts_imports: i32 = 0;
-
-    //     let mut density_evaluator = DensityEvaluator::new(source.get_loc());
-    //     let mut bulletins = vec![];
-
-    //     EvaluatorResult {
-    //         alerts_functions,
-    //         alerts_imports,
-    //         density_evaluator,
-    //         bulletins?,
-    //         source,
-    //         message: String::from(""),
-    //     }
-    // }
-
-    fn check_module(
+    fn rule_check_module(
         &self,
         source: &SourceFile,
         entry: &ImportEntry,
@@ -55,6 +38,13 @@ impl Evaluator {
     ) {
         if let Rule::Module(func, ident, _name, _desc) = rule {
             if entry.module.to_string() == *ident {
+                let multiplier: f64 = if self.opt_enable_multiplier {
+                    source.get_import_tfidf(ident).unwrap_or(&1.0f64).to_owned()
+                } else {
+                    1.0f64
+                };
+                debug!("TFIDF value for identifier {} set to {}", ident, multiplier);
+
                 let notif = Bulletin::new(
                     ident.to_string(),
                     BulletinReason::SuspiciousImport,
@@ -63,14 +53,6 @@ impl Evaluator {
                     set.threshold,
                 );
                 bulletins.push(notif);
-
-                let multiplier: f64 = if self.opt_enable_multiplier {
-                    source.get_tfidf_value(ident).unwrap_or(&1.0f64).to_owned()
-                } else {
-                    1.0f64
-                };
-                debug!("TFIDF value for identifier {} set to {}", ident, multiplier);
-
                 de.add_density(FieldType::Imports, entry.location.row(), multiplier);
                 *alerts += 1;
 
@@ -124,11 +106,44 @@ impl Evaluator {
         }
     }
 
+    fn misc_import_checks(
+        &self,
+        _source: &SourceFile,
+        entry: &ImportEntry,
+        de: &mut DensityEvaluator,
+        bulletins: &mut Bulletins,
+        alerts: &mut i32,
+    ) {
+        if entry.is_dynamic {
+            let notif = Bulletin::new(
+                entry.module.to_string(),
+                BulletinReason::DynamicImport,
+                entry.location,
+                None,
+                0.3f64,
+            );
+            bulletins.push(notif);
+            de.add_density(FieldType::Behavior, entry.location.row(), 1.0f64);
+            *alerts += 1;
+        }
+    }
+
     pub fn evaluate(&self, analysis: &mut SourceAnalysis) {
+
+        for entry in analysis.source.get_imports() {
+            self.misc_import_checks(
+                &analysis.source,
+                entry,
+                &mut analysis.density_evaluator,
+                &mut analysis.bulletins,
+                &mut analysis.alerts_imports,
+            );
+        }
+
         for set in self.rule_sets.iter() {
             for entry in analysis.source.get_imports() {
                 for rule in set.get_module_rules() {
-                    self.check_module(
+                    self.rule_check_module(
                         &analysis.source,
                         entry,
                         rule,
