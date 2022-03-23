@@ -1,8 +1,8 @@
-use crate::{Evaluator, SourceFile};
+use crate::SourceFile;
 
 use super::{
     density_evaluator::{DensityEvaluator, Field, FieldType},
-    evaluator, Bulletin, Bulletins, Functionality, Hotspot,
+    Bulletin, Bulletins, Functionality, Hotspot,
 };
 
 use serde::Serialize;
