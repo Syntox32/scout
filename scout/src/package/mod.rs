@@ -130,7 +130,8 @@ impl Package {
                     .iter()
                     .filter(|&(_, im_lookup)| im_lookup.contains_key(&im))
                     .count() as f64;
-                let tfidf: f64 = freq * (count_sources / sources_with_im).ln();
+                let tf = self.calc_idf_smooth(count_sources, sources_with_im);
+                let tfidf: f64 = freq * tf;
 
                 debug!(
                     "sources with import {}: {} -> tf-idf {}",

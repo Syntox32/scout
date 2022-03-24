@@ -120,7 +120,7 @@ impl Evaluator {
                 BulletinReason::DynamicImport,
                 entry.location,
                 None,
-                0.3f64,
+                0.2f64,
             );
             bulletins.push(notif);
             de.add_density(FieldType::Behavior, entry.location.row(), 1.0f64);

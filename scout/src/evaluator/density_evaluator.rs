@@ -11,13 +11,14 @@ fn gaussian_density(x: f64, mu: f64, variance: f64) -> f64 {
 
 fn mult(arr: &Vec<f64>, mul: &f64, target: &mut Vec<f64>) {
     for (a, t) in arr.iter().zip(target.iter_mut()) {
-        *t += a * mul;
+        *t += a; //* mul;
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Field {
     multiplier: f64,
+    tfidf_weight: f64,
     loc: usize,
     x: Vec<f64>,
     y: Vec<f64>,
@@ -38,48 +39,22 @@ impl Field {
 
         Self {
             multiplier: *multiplier,
+            tfidf_weight: 0.4,
             loc,
             x,
             y,
         }
     }
 
-    fn new_from(fields: &HashMap<FieldType, Field>) -> Self {
-        let multiplier: f64 = 0.0;
-
-        let funcs = fields.get(&FieldType::Functions).unwrap();
-        let imports = fields.get(&FieldType::Imports).unwrap();
-        let behavior = fields.get(&FieldType::Behavior).unwrap();
-        let strings = fields.get(&FieldType::Strings).unwrap();
-
-        if (funcs.loc + imports.loc + behavior.loc + strings.loc) != funcs.loc * 4 {
-            error!("Fields have different lines of code");
-        }
-
-        let mut combined_x: Vec<f64> = Vec::with_capacity(funcs.x.len());
-        let mut combined_y: Vec<f64> = Vec::with_capacity(funcs.x.len());
-        for x in &funcs.x {
-            combined_x.push(x.to_owned());
-            combined_y.push(0.0);
-        }
-
-        mult(&funcs.y, &funcs.multiplier, &mut combined_y);
-        // mult(&imports.y, &imports.multiplier, &mut combined_y);
-        // mult(&behavior.y, &behavior.multiplier, &mut combined_y);
-        // mult(&strings.y, &strings.multiplier, &mut combined_y);
-
-        Self {
-            multiplier: multiplier,
-            loc: funcs.loc,
-            x: combined_x,
-            y: combined_y,
-        }
+    fn tfidf_weight(tfidf_value: f64, current_value: f64, weight: f64) -> f64 {
+        (1.0f64 - weight) * (current_value - tfidf_value) + tfidf_value
     }
 
-    fn add_density(&mut self, line: f64, variance: f64, multiplier: f64) {
-        for (y, x) in self.y.iter_mut().zip(self.x.iter_mut()) {
+    fn add_density(&mut self, line: f64, variance: f64, tfidf_multiplier: f64) {
+        for (y, x) in self.y.iter_mut().zip(self.x.iter()) {
             *y += gaussian_density(*x, line, variance);
-            *y *= multiplier;
+            *y *= self.multiplier;
+            *y *= Field::tfidf_weight(tfidf_multiplier, *y, 0.4);
         }
     }
 
@@ -150,7 +125,7 @@ impl DensityEvaluator {
         let mut mult_map: HashMap<FieldType, f64> = HashMap::new();
         mult_map.insert(FieldType::Functions, 1.5);
         mult_map.insert(FieldType::Imports, 1.0);
-        mult_map.insert(FieldType::Behavior, 1.0);
+        mult_map.insert(FieldType::Behavior, 1.2);
         mult_map.insert(FieldType::Strings, 1.0);
 
         let mut fields: HashMap<FieldType, Field> = HashMap::new();
@@ -191,18 +166,52 @@ impl DensityEvaluator {
         Self { fields }
     }
 
+    fn get_combined_field(&self) -> Field {
+        let multiplier: f64 = 0.0; // this is ignored when requesting a combined field
+        let fields = self.get_fields();
+
+        let funcs = fields.get(&FieldType::Functions).unwrap();
+        let imports = fields.get(&FieldType::Imports).unwrap();
+        let behavior = fields.get(&FieldType::Behavior).unwrap();
+        let strings = fields.get(&FieldType::Strings).unwrap();
+
+        if (funcs.loc + imports.loc + behavior.loc + strings.loc) != funcs.loc * 4 {
+            error!("Fields have different lines of code");
+        }
+
+        let mut combined_x: Vec<f64> = Vec::with_capacity(funcs.x.len());
+        let mut combined_y: Vec<f64> = Vec::with_capacity(funcs.x.len());
+        for x in &funcs.x {
+            combined_x.push(x.to_owned());
+            combined_y.push(0.0);
+        }
+
+        mult(&funcs.y, &funcs.multiplier, &mut combined_y);
+        mult(&imports.y, &imports.multiplier, &mut combined_y);
+        mult(&behavior.y, &behavior.multiplier, &mut combined_y);
+        mult(&strings.y, &strings.multiplier, &mut combined_y);
+
+        Field {
+            multiplier: multiplier,
+            tfidf_weight: multiplier,
+            loc: funcs.loc,
+            x: combined_x,
+            y: combined_y,
+        }
+    }
+
     pub fn get_fields(&self) -> &HashMap<FieldType, Field> {
         &self.fields
     }
 
-    pub fn add_density(&mut self, field_type: FieldType, row: usize, multiplier: f64) {
+    pub fn add_density(&mut self, field_type: FieldType, row: usize, custom_multiplier: f64) {
         let field = self.fields.get_mut(&field_type).unwrap();
         let line: f64 = row as f64;
-        field.add_density(line, DensityEvaluator::VARIANCE, multiplier);
+        field.add_density(line, DensityEvaluator::VARIANCE, custom_multiplier);
     }
 
     pub fn calculate_combined_field(&self) -> Field {
-        Field::new_from(&self.fields)
+        self.get_combined_field()
     }
 
     pub fn hotspots(&self) -> Vec<Hotspot> {
@@ -213,12 +222,30 @@ impl DensityEvaluator {
 
 #[cfg(test)]
 mod tests {
-    use super::gaussian_density;
+    use super::{gaussian_density, mult};
 
     #[test]
     fn test_gaussian_density() {
         let val = gaussian_density(11f64, 10f64, 1f64);
         println!("{}", val);
         assert_eq!(val, 0.24197072451914337f64);
+    }
+
+    #[test]
+    fn test_mult() {
+        let x: Vec<f64> = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+        let y: Vec<f64> = vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+        let mut target: Vec<f64> = vec![];
+        for _ in 0..11 {
+            target.push(0f64);
+        }
+
+        mult(&x, &2.0, &mut target);
+        assert_eq!(target, vec![0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]);
+
+
+        mult(&y, &2.0, &mut target);
+        assert_eq!(target, vec![0.0, 4.0, 8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0]);
+
     }
 }
