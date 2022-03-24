@@ -25,22 +25,16 @@ mod engine {
     use crate::{Package, RuleManager};
 
     pub struct Engine {
-        rule_path: String,
+        rule_path: Option<String>,
 
         opt_show_all: bool,
         opt_threshold: f64,
     }
 
     impl<'e> Engine {
-        pub fn get_default_rule_file() -> String {
-            RuleManager::DEFAULT_RULE_FILE.to_string()
-        }
-
         pub fn new() -> Self {
-            let rule_path = RuleManager::DEFAULT_RULE_FILE.to_string();
-
             Engine {
-                rule_path,
+                rule_path: None,
                 opt_show_all: false,
                 opt_threshold: 0.0,
             }
@@ -56,13 +50,13 @@ mod engine {
             self
         }
 
-        pub fn set_rule_path(mut self, rule_path: &str) -> Self {
-            self.rule_path = rule_path.to_string();
+        pub fn set_rule_path(mut self, rule_path: Option<String>) -> Self {
+            self.rule_path = rule_path;
             self
         }
 
         fn get_rule_manager(&self) -> Result<RuleManager> {
-            Ok(RuleManager::new(self.rule_path.as_str())?)
+            Ok(RuleManager::new(&self.rule_path)?)
         }
 
         pub fn analyse_package(self, path: &str) -> Result<AnalysisResult> {

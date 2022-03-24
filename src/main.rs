@@ -44,11 +44,7 @@ fn main() -> Result<()> {
     let engine = Engine::new()
         .set_show_all(show_all_override)
         .set_threshold(args.threshold.unwrap_or(0f64))
-        .set_rule_path(
-            args.rules
-                .unwrap_or_else(|| Engine::get_default_rule_file())
-                .as_str(),
-        );
+        .set_rule_path(args.rules);
 
     match args.file {
         Some(path) => match engine.analyse_file(path.as_str()) {

@@ -5,7 +5,7 @@ use std::{fs, path::Path};
 
 use walkdir::WalkDir;
 
-pub fn load_from_file<P>(path: &P) -> Result<String>
+pub fn load_from_file<P>(path: P) -> Result<String>
 where
     P: AsRef<Path>,
 {
