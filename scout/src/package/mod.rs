@@ -1,8 +1,8 @@
 use crate::{
     evaluator::{AnalysisResult, Evaluator, RuleManager, SourceAnalysis},
     source::SourceFile,
-    utils::collect_files,
-    Result,
+    utils::{self, collect_files},
+    Result, visitors::VariableType,
 };
 use colored::Colorize;
 use std::{
@@ -16,6 +16,18 @@ pub struct Package {
     checker: Evaluator,
     threshold: f64,
     show_all_override: bool,
+}
+
+#[derive(Debug)]
+pub struct Metadata {
+    pub name: String,
+    pub deps: Vec<String>,
+}
+
+impl Metadata {
+    pub fn get_deps(&self) -> &Vec<String> {
+        &self.deps
+    }
 }
 
 impl Package {
@@ -54,7 +66,20 @@ impl Package {
 
     pub fn analyse(self) -> Result<AnalysisResult> {
         let results: Vec<SourceAnalysis> = self.run_pipeline(self.load_sources())?;
-        Ok(AnalysisResult(results))
+
+        let metadata = match self.get_metadata(&self.path) {
+            Ok(metadata) => Some(metadata),
+            Err(err) => {
+                error!(
+                    "Error getting metadate for package '{}' in package '{}'",
+                    err.to_string(),
+                    &self.path.as_path().to_str().unwrap()
+                );
+                None
+            }
+        };
+        
+        Ok(AnalysisResult::new(results, metadata))
     }
 
     pub fn analyse_single(&mut self) -> Result<AnalysisResult> {
@@ -67,9 +92,9 @@ impl Package {
         self.add_sourcefile(&self.path, &mut sources)?;
         let source = sources.pop().unwrap();
 
-        let result: Vec<SourceAnalysis> = self.run_pipeline(vec![source])?;
+        let results: Vec<SourceAnalysis> = self.run_pipeline(vec![source])?;
 
-        Ok(AnalysisResult(result))
+        Ok(AnalysisResult::new(results, None))
     }
 
     fn run_pipeline(&self, sources: Vec<SourceFile>) -> Result<Vec<SourceAnalysis>> {
@@ -94,12 +119,16 @@ impl Package {
             }
         }
 
-        analyses = analyses.into_iter()
-            .filter_map(|a| if a.any_bulletins_over_threshold() {
-                Some(a)
-            } else { 
-                None 
-            }).collect();
+        analyses = analyses
+            .into_iter()
+            .filter_map(|a| {
+                if a.any_bulletins_over_threshold() {
+                    Some(a)
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         Ok(analyses)
     }
@@ -297,6 +326,103 @@ impl Package {
         Some(message)
     }
 
+    pub fn get_metadata(&self, path: &PathBuf) -> Result<Metadata> {
+        let metadata_files =
+            utils::collect_files_matching(path, vec!["METADATA", "PKG-INFO", "setup.py"]);
+
+        if let Some(path) = metadata_files.get("METADATA") {
+            return Ok(Package::parse_metadata_file(path)?);
+        } else {
+            let mut metadata = Metadata {
+                name: String::from(""),
+                deps: vec![],
+            };
+
+            if let Some(pkg_info_path) = metadata_files.get("PKG-INFO") {
+                metadata.name = Package::parse_name_from_pkg(pkg_info_path)?;
+            }
+            if let Some(setup_path) = metadata_files.get("setup.py") {
+                metadata.deps = self.parse_deps_from_setup(setup_path)?;
+            }
+
+            return Ok(metadata);
+        }
+    }
+
+    fn parse_deps_from_setup(&self, path: &PathBuf) -> Result<Vec<String>> {
+        let mut deps: Vec<String> = vec![];
+
+        let mut sources: Vec<SourceFile> = vec![];
+        self.add_sourcefile(path, &mut sources)?;
+        let source = sources.pop().unwrap();
+
+        let entries = source.get_entries();
+        for entry in entries {
+            if entry.get_identifier() == "setup" {
+                for (key, word) in &entry.keywords {
+                    if key.as_ref().unwrap() == &String::from("install_requires") {
+                        if let Some(list) = word {
+                            match list {
+                                VariableType::List(items) => {
+                                    for item in items.iter() {
+                                        if let Some(var) = item {
+                                            if var.is_string() {
+                                                let str = var.get_string().unwrap();
+                                                deps.push(str.to_string());
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {},
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(deps)
+    }
+
+    fn parse_name_from_pkg(path: &PathBuf) -> Result<String> {
+        let mut name: String = String::from("");
+
+        for line in utils::read_lines(path)? {
+            if let Ok(line) = line {
+                if line.starts_with("Name:") {
+                    if let Some((_, right)) = line.split_once(':') {
+                        name = right.trim().to_string();
+                    }
+                }
+            }
+        }
+
+        Ok(name)
+    }
+
+    fn parse_metadata_file(path: &PathBuf) -> Result<Metadata> {
+        let mut name: String = String::from("");
+        let mut deps: Vec<String> = vec![];
+
+        for line in utils::read_lines(path)? {
+            if let Ok(line) = line {
+                if line.starts_with("Name:") {
+                    if let Some((_, right)) = line.split_once(':') {
+                        name = right.trim().to_string();
+                    }
+                } else if line.starts_with("Requires-Dist:") {
+                    if let Some((_, right)) = line.split_once(':') {
+                        if let Some(dep) = right.split_ascii_whitespace().into_iter().next() {
+                            deps.push(dep.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(Metadata { name, deps })
+    }
+
     fn get_package_dir(path: &Path) -> Option<PathBuf> {
         Some(path.to_path_buf())
         // match Package::detect_package_type(&path)? {
@@ -315,5 +441,26 @@ impl Package {
 
         let pkg_path = Package::get_package_dir(&p)?;
         Some(pkg_path)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{path::PathBuf, str::FromStr};
+
+    use crate::{Metadata, Package};
+
+    #[test]
+    fn test_parse_metadata_file() {
+        let metadata_file = PathBuf::from_str("../tests/test_files/wheel-metadata").unwrap();
+
+        let metadata: Metadata = Package::parse_metadata_file(&metadata_file).unwrap();
+
+        assert_eq!(metadata.name, String::from("apache-beam"));
+        assert!(metadata.deps.contains(&String::from("crcmod")));
+        assert!(metadata
+            .deps
+            .contains(&String::from("google-cloud-bigquery")));
+        assert!(metadata.deps.contains(&String::from("pytest")));
     }
 }

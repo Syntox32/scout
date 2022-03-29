@@ -1,4 +1,4 @@
-use crate::SourceFile;
+use crate::{Metadata, SourceFile};
 
 use super::{
     density_evaluator::{DensityEvaluator, Field, FieldType},
@@ -58,13 +58,32 @@ impl<'a> JsonResult<'a> {
     }
 }
 
-pub struct AnalysisResult(pub Vec<SourceAnalysis>);
+#[derive(Debug)]
+pub struct AnalysisResult {
+    results: Vec<SourceAnalysis>,
+    metadata: Option<Metadata>,
+}
 
 impl<'a> AnalysisResult {
+    pub fn new(results: Vec<SourceAnalysis>, metadata: Option<Metadata>) -> Self {
+        Self { results, metadata }
+    }
+
+    pub fn get_metadata(&self) -> &Option<Metadata> {
+        &self.metadata
+    }
+
+    pub fn get_results(&self) -> &Vec<SourceAnalysis> {
+        &self.results
+    }
+
+    pub fn get_dependencies(&self) -> Option<&Vec<String>> {
+        Some(self.metadata.as_ref()?.get_deps())
+    }
+
     fn get_json(&self, with_fields: bool) -> String {
         let mut out = JsonResult::new();
-        let AnalysisResult(results) = self;
-        for res in results {
+        for res in self.get_results() {
             out.add(res);
 
             if with_fields {
@@ -80,11 +99,6 @@ impl<'a> AnalysisResult {
 
     pub fn to_json_with_fields(&self) -> String {
         self.get_json(true)
-    }
-
-    pub fn get_results(&self) -> &Vec<SourceAnalysis> {
-        let AnalysisResult(results) = self;
-        &results
     }
 }
 

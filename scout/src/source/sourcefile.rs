@@ -6,7 +6,7 @@ use rustpython_parser::parser;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
-use crate::visitors::{CallVisitor, ImportEntry, ImportVisitor, CallEntry};
+use crate::visitors::{CallEntry, CallVisitor, ImportEntry, ImportVisitor, VariableVisitor};
 use crate::{utils, Result};
 
 pub struct ParseErrorFixer {
@@ -133,12 +133,21 @@ impl SourceFile {
             }
         };
 
+        // println!("Statements: {:#?}", &statements);
+
         let loc = source.lines().count().to_owned();
+        let variable_visitor = SourceFile::visit(&statements, VariableVisitor::new());
         let mut import_visitor = SourceFile::visit(&statements, ImportVisitor::new());
         let mut function_visitor = SourceFile::visit(&statements, CallVisitor::new());
+        // debug!("Variable visitor?: {:#?}", variable_visitor.get_variables());
 
         function_visitor.resolve_imports(import_visitor.get_aliases());
-        import_visitor.resolve_dynamic_imports(function_visitor.get_entries());
+        function_visitor.resolve_variables(variable_visitor.get_variables());
+
+        import_visitor.resolve_dynamic_imports(
+            function_visitor.get_entries(),
+            variable_visitor.get_variables(),
+        );
 
         let sf = SourceFile {
             source_path: path.to_owned(),
@@ -182,7 +191,7 @@ impl SourceFile {
 
 ///
 /// ImportVisitor functions for TFIDF
-/// 
+///
 impl SourceFile {
     pub fn get_imports(&self) -> &HashSet<ImportEntry> {
         self.import_visitor.get_imports()
@@ -221,7 +230,7 @@ impl SourceFile {
 
 ///
 /// CallVisitor functions for TFIDF
-/// 
+///
 impl SourceFile {
     pub fn has_function(&self, function: &str) -> bool {
         self.call_visitor.has_function(function)

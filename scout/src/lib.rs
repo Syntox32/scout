@@ -8,7 +8,7 @@ mod visitors;
 extern crate log;
 
 pub use evaluator::{Evaluator, RuleManager, SourceAnalysis};
-pub use package::Package;
+pub use package::{Metadata, Package};
 pub use source::SourceFile;
 
 pub use engine::Engine;

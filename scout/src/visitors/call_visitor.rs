@@ -1,4 +1,4 @@
-use crate::utils::format_empty_arg;
+use crate::utils::{self, ast::resolve_kwargs};
 
 use ast_walker::AstVisitor;
 use rustpython_parser::{
@@ -10,11 +10,14 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+use super::{variable_visitor::VariableType, VariableVisitor};
+
 #[derive(Debug)]
 pub struct CallEntry {
     pub full_identifier: String,
     pub location: Location,
-    pub args: Vec<Option<String>>,
+    pub args: Vec<Option<VariableType>>,
+    pub keywords: Vec<(Option<String>, Option<VariableType>)>,
 }
 
 impl CallEntry {
@@ -128,6 +131,34 @@ impl CallVisitor {
         }
     }
 
+    pub fn resolve_variables(&mut self, variables: &HashMap<String, VariableType>) {
+        for entry in self.entries.iter_mut() {
+            for arg in entry.args.iter_mut() {
+                if let Some(arg_var) = arg {
+                    if arg_var.is_identifier() {
+                        if let Some(val) = arg_var.get_identifier() {
+                            if let Some(variable_value) = variables.get(val) {
+                                *arg = Some(variable_value.to_owned());
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (_, word) in entry.keywords.iter_mut() {
+                if let Some(word_val) = word {
+                    if word_val.is_identifier() {
+                        if let Some(val) = word_val.get_identifier() {
+                            if let Some(keyword_value) = variables.get(val) {
+                                *word = Some(keyword_value.to_owned());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     pub fn get_absolute_identifier(&mut self, expr: &Box<Expression>) -> Option<String> {
         match &expr.node {
             ExpressionType::Identifier { name } => Some(name.to_owned()),
@@ -140,7 +171,7 @@ impl CallVisitor {
                 keywords,
             } => {
                 self.visit_call(function, args, keywords);
-                Some(format_empty_arg(&None))
+                Some(utils::format_empty_arg(&None))
             }
             _ => {
                 let e = format!(
@@ -151,47 +182,6 @@ impl CallVisitor {
                 self.errors.push((e, expr.location));
                 None
             }
-        }
-    }
-
-    fn try_to_string(&self, expr: &Expression) -> Option<String> {
-        match &expr.node {
-            // ExpressionType::Call { .. } => self.resolve_call(arg),
-            ExpressionType::Binop { a, op, b } => self.resolve_binop(a, b, op),
-            ExpressionType::String { value } => self.resolve_string_group(&value),
-            _ => None,
-        }
-    }
-
-    fn resolve_args(&mut self, args: &[Expression]) -> Vec<Option<String>> {
-        // trace!("{:#?}", args);
-        let results: Vec<Option<String>> = args.iter().map(|arg| self.try_to_string(arg)).collect();
-        results
-    }
-
-    fn resolve_string_group(&self, value: &StringGroup) -> Option<String> {
-        match value {
-            StringGroup::Constant { value } => Some(value.to_owned()),
-            _ => None, //String::from("unsupported by resolve_string_group") }
-        }
-    }
-
-    fn resolve_binop(
-        &self,
-        a: &Box<Expression>,
-        b: &Box<Expression>,
-        op: &Operator,
-    ) -> Option<String> {
-        let aa = self.try_to_string(a)?;
-        let bb = self.try_to_string(b)?;
-        self.do_binop(aa, bb, op)
-    }
-
-    fn do_binop(&self, a: String, b: String, op: &Operator) -> Option<String> {
-        // trace!("doing bin op: {} {:?} {}", a, op, b);
-        match op {
-            Operator::Add => Some(format!("{}{}", a.to_owned(), b.to_owned())),
-            _ => None, //format!("{} binop {}", a, b)
         }
     }
 }
@@ -216,12 +206,14 @@ impl AstVisitor for CallVisitor {
         };
 
         if let Some(f) = func {
-            let args = self.resolve_args(args);
+            let args = utils::ast::resolve_args(args);
             // trace!("args for func {} = {:?}", f, args);
+            let kw = resolve_kwargs(keywords);
             let entry = CallEntry {
                 full_identifier: f,
                 location: function.location,
                 args,
+                keywords: kw,
             };
 
             self.add_call_entry(entry);

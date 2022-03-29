@@ -8,7 +8,9 @@ use rustpython_parser::{
     location::Location,
 };
 
-use super::CallEntry;
+use crate::utils::ast::is_identifier;
+
+use super::{CallEntry, VariableType};
 
 #[derive(Debug)]
 pub struct ImportEntry {
@@ -125,15 +127,33 @@ impl ImportVisitor {
         self.imports.insert(entry);
     }
 
-    pub fn resolve_dynamic_imports(&mut self, entries: &Vec<CallEntry>) {
+    pub fn resolve_dynamic_imports(
+        &mut self,
+        entries: &Vec<CallEntry>,
+        variables: &HashMap<String, VariableType>,
+    ) {
         for entry in entries {
             if *entry.get_identifier() == String::from("__import__")
                 || *entry.get_identifier() == String::from("importlib.import_module")
             {
                 if let Some(arg) = entry.args.first() {
                     if let Some(import_name) = arg {
+                        let mut import: String = String::from("");
+
+                        if import_name.is_identifier() {
+                            if let Some(key) = import_name.get_identifier() {
+                                let val = variables.get(key).unwrap();
+
+                                if val.is_string() {
+                                    import = val.get_string().unwrap().to_string();
+                                }
+                            }
+                        } else {
+                            import = import_name.get_string().unwrap().to_string();
+                        }
+
                         let entry = ImportEntry {
-                            module: import_name.to_string(),
+                            module: import,
                             symbol: None,
                             location: entry.location,
                             alias: None,
