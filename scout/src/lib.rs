@@ -1,3 +1,4 @@
+mod config;
 mod evaluator;
 mod package;
 mod source;
@@ -6,6 +7,8 @@ mod visitors;
 
 #[macro_use]
 extern crate log;
+
+pub use config::Config;
 
 pub use evaluator::{Evaluator, RuleManager, SourceAnalysis};
 pub use package::{Metadata, Package};

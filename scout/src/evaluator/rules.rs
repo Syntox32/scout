@@ -71,7 +71,7 @@ pub struct RuleManager {
 
 impl RuleManager {
     pub const DEFAULT_RULE_FILE: &'static str = "rules.ron";
-    const DEFAULT_RULES: &'static str =  include_str!("rules.ron");
+    const DEFAULT_RULES: &'static str = include_str!("rules.ron");
 
     fn load_rules(rule_path: &Option<String>) -> Result<Vec<RuleSet>> {
         let rules_content: String = match rule_path {
@@ -79,13 +79,15 @@ impl RuleManager {
                 let path = PathBuf::from_str(rules_path.as_str())?;
                 trace!("Loading rulesets from: '{}'", &rules_path);
                 utils::load_from_file(path)?
-            },
+            }
             None => {
-                trace!("Using default ruleset: '{}'", RuleManager::DEFAULT_RULE_FILE);
+                trace!(
+                    "Using default ruleset: '{}'",
+                    RuleManager::DEFAULT_RULE_FILE
+                );
                 RuleManager::DEFAULT_RULES.to_owned()
             }
         };
-        
 
         match ron::from_str(rules_content.as_str()) {
             Ok(Rules(rule_sets)) => {

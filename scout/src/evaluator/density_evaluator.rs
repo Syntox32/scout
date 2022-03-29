@@ -11,7 +11,7 @@ fn gaussian_density(x: f64, mu: f64, variance: f64) -> f64 {
 
 fn mult(arr: &Vec<f64>, mul: &f64, target: &mut Vec<f64>) {
     for (a, t) in arr.iter().zip(target.iter_mut()) {
-        *t += a; //* mul;
+        *t += a * mul;
     }
 }
 
@@ -46,15 +46,17 @@ impl Field {
         }
     }
 
-    fn tfidf_weight(tfidf_value: f64, current_value: f64, weight: f64) -> f64 {
-        (1.0f64 - weight) * (current_value - tfidf_value) + tfidf_value
+    fn tfidf_weight(tfidf_value: f64, weight: f64) -> f64 {
+        // (1.0f64 - weight) * (current_value - tfidf_value) + tfidf_value
+        1.0f64 - (1.0f64 - tfidf_value) * weight
     }
 
-    fn add_density(&mut self, line: f64, variance: f64, tfidf_multiplier: f64) {
+    fn add_density(&mut self, line: f64, variance: f64, tfidf_multiplier: f64, tfidf_weight: f64) {
         for (y, x) in self.y.iter_mut().zip(self.x.iter()) {
             *y += gaussian_density(*x, line, variance);
             *y *= self.multiplier;
-            *y *= Field::tfidf_weight(tfidf_multiplier, *y, 0.4);
+            *y *= Field::tfidf_weight(tfidf_multiplier, tfidf_weight);
+            // println!("{}", val);
         }
     }
 
@@ -204,10 +206,21 @@ impl DensityEvaluator {
         &self.fields
     }
 
-    pub fn add_density(&mut self, field_type: FieldType, row: usize, custom_multiplier: f64) {
+    pub fn add_density(
+        &mut self,
+        field_type: FieldType,
+        row: usize,
+        custom_multiplier: f64,
+        tfidf_weight: f64,
+    ) {
         let field = self.fields.get_mut(&field_type).unwrap();
         let line: f64 = row as f64;
-        field.add_density(line, DensityEvaluator::VARIANCE, custom_multiplier);
+        field.add_density(
+            line,
+            DensityEvaluator::VARIANCE,
+            custom_multiplier,
+            tfidf_weight,
+        );
     }
 
     pub fn calculate_combined_field(&self) -> Field {
@@ -241,11 +254,15 @@ mod tests {
         }
 
         mult(&x, &2.0, &mut target);
-        assert_eq!(target, vec![0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]);
-
+        assert_eq!(
+            target,
+            vec![0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        );
 
         mult(&y, &2.0, &mut target);
-        assert_eq!(target, vec![0.0, 4.0, 8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0]);
-
+        assert_eq!(
+            target,
+            vec![0.0, 4.0, 8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0]
+        );
     }
 }

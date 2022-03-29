@@ -53,7 +53,7 @@ impl Evaluator {
                     set.threshold,
                 );
                 bulletins.push(notif);
-                de.add_density(FieldType::Imports, entry.location.row(), multiplier);
+                de.add_density(FieldType::Imports, entry.location.row(), multiplier, 0.4f64);
                 *alerts += 1;
 
                 if entry.context == "function" {
@@ -65,7 +65,7 @@ impl Evaluator {
                         0.3f64,
                     );
                     bulletins.push(notif);
-                    de.add_density(FieldType::Imports, entry.location.row(), 1.0f64);
+                    de.add_density(FieldType::Imports, entry.location.row(), 1.0f64, 0.4f64);
                     *alerts += 1;
                 }
             }
@@ -94,13 +94,25 @@ impl Evaluator {
                 bulletins.push(notif);
 
                 let multiplier: f64 = if self.opt_enable_multiplier {
-                    source.get_call_tfidf(entry.get_identifier().as_str()).unwrap_or(&1.0f64).to_owned()
+                    source
+                        .get_call_tfidf(entry.get_identifier().as_str())
+                        .unwrap_or(&1.0f64)
+                        .to_owned()
                 } else {
                     1.0f64
                 };
-                debug!("TFIDF value for identifier {} set to {}", entry.get_identifier().as_str(), multiplier);
+                debug!(
+                    "TFIDF value for identifier {} set to {}",
+                    entry.get_identifier().as_str(),
+                    multiplier
+                );
 
-                de.add_density(FieldType::Functions, entry.location.row(), multiplier);
+                de.add_density(
+                    FieldType::Functions,
+                    entry.location.row(),
+                    multiplier,
+                    0.2f64,
+                );
                 *alerts += 1;
             }
         }
@@ -123,13 +135,12 @@ impl Evaluator {
                 0.2f64,
             );
             bulletins.push(notif);
-            de.add_density(FieldType::Behavior, entry.location.row(), 1.0f64);
+            de.add_density(FieldType::Behavior, entry.location.row(), 1.0f64, 0.3f64);
             *alerts += 1;
         }
     }
 
     pub fn evaluate(&self, analysis: &mut SourceAnalysis) {
-
         for entry in analysis.source.get_imports() {
             self.misc_import_checks(
                 &analysis.source,
