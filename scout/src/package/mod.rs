@@ -366,20 +366,22 @@ impl Package {
         for entry in entries {
             if entry.get_identifier() == "setup" {
                 for (key, word) in &entry.keywords {
-                    if key.as_ref().unwrap() == &String::from("install_requires") {
-                        if let Some(list) = word {
-                            match list {
-                                VariableType::List(items) => {
-                                    for item in items.iter() {
-                                        if let Some(var) = item {
-                                            if var.is_string() {
-                                                let str = var.get_string().unwrap();
-                                                deps.push(str.to_string());
+                    if let Some(key) = key.as_ref() {
+                        if key == &String::from("install_requires") {
+                            if let Some(list) = word {
+                                match list {
+                                    VariableType::List(items) => {
+                                        for item in items.iter() {
+                                            if let Some(var) = item {
+                                                if var.is_string() {
+                                                    let str = var.get_string().unwrap();
+                                                    deps.push(str.to_string());
+                                                }
                                             }
                                         }
                                     }
+                                    _ => {}
                                 }
-                                _ => {}
                             }
                         }
                     }

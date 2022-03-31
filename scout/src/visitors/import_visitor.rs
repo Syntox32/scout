@@ -148,8 +148,10 @@ impl ImportVisitor {
                                     }
                                 }
                             }
-                        } else {
+                        } else if import_name.is_string() {
                             import = import_name.get_string().unwrap().to_string();
+                        } else {
+                            warn!("import was not identifier or string: {:?}", &import_name);
                         }
 
                         let entry = ImportEntry {
