@@ -142,10 +142,10 @@ impl ImportVisitor {
 
                         if import_name.is_identifier() {
                             if let Some(key) = import_name.get_identifier() {
-                                let val = variables.get(key).unwrap();
-
-                                if val.is_string() {
-                                    import = val.get_string().unwrap().to_string();
+                                if let Some(val) = variables.get(key) {
+                                    if val.is_string() {
+                                        import = val.get_string().unwrap().to_string();
+                                    }
                                 }
                             }
                         } else {
