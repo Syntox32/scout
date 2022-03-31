@@ -11,12 +11,12 @@ pub struct Config {
     /// Field weight for strings
     fw_strings: Option<f64>,
 
-    /// TFIDF for functions
+    /// TFIDF weight for functions
     tw_functions: Option<f64>,
-    /// Field weight for imports
+    /// /// TFIDF weight for imports
     tw_imports: Option<f64>,
-    /// Field weight for behavior
+    /// /// TFIDF weight for behavior
     tw_behavior: Option<f64>,
-    /// Field weight for strings
+    /// /// TFIDF weight for strings
     tw_strings: Option<f64>,
 }
