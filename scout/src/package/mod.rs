@@ -2,7 +2,8 @@ use crate::{
     evaluator::{AnalysisResult, Evaluator, RuleManager, SourceAnalysis},
     source::SourceFile,
     utils::{self, collect_files},
-    Result, visitors::VariableType,
+    visitors::VariableType,
+    Result,
 };
 use colored::Colorize;
 use std::{
@@ -31,13 +32,18 @@ impl Metadata {
 }
 
 impl Package {
-    pub fn new(path: PathBuf, rules: RuleManager, threshold: f64, show_all_override: bool) -> Self {
-        Self {
+    pub fn new(
+        path: PathBuf,
+        rules: RuleManager,
+        threshold: f64,
+        show_all_override: bool,
+    ) -> Result<Self> {
+        Ok(Self {
             path: path.to_owned(),
-            checker: Evaluator::new(rules.get_rule_sets()),
+            checker: Evaluator::new(rules.get_rule_sets())?,
             threshold,
             show_all_override,
-        }
+        })
     }
 
     fn add_sourcefile(&self, path: &PathBuf, target: &mut Vec<SourceFile>) -> Result<()> {
@@ -78,7 +84,7 @@ impl Package {
                 None
             }
         };
-        
+
         Ok(AnalysisResult::new(results, metadata))
     }
 
@@ -373,7 +379,7 @@ impl Package {
                                         }
                                     }
                                 }
-                                _ => {},
+                                _ => {}
                             }
                         }
                     }
