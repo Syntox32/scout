@@ -1,9 +1,16 @@
+use std::collections::HashMap;
+
+use rustpython_parser::location::Location;
+
 use crate::source::SourceFile;
 use crate::visitors::{CallEntry, ImportEntry};
 use crate::{utils, SourceAnalysis};
 
+use super::canary::{Canaries, CanaryInfo};
 use super::density_evaluator::FieldType;
 use super::{Bulletin, BulletinReason, Bulletins, DensityEvaluator, Rule, RuleSet};
+
+use crate::Result;
 
 #[derive(Debug)]
 // This is a link between the rule and the rule set for reverse lookups
@@ -13,17 +20,19 @@ pub struct RuleEntry<'r>(&'r Rule, &'r RuleSet);
 #[derive(Debug)]
 pub struct Evaluator {
     rule_sets: Vec<RuleSet>,
+    canaries: Canaries,
 
     /// Enable or disable the use of the multiplier in adding curves.
     opt_enable_multiplier: bool,
 }
 
 impl Evaluator {
-    pub fn new(rule_sets: Vec<RuleSet>) -> Self {
-        Self {
+    pub fn new(rule_sets: Vec<RuleSet>) -> Result<Self> {
+        Ok(Self {
             rule_sets,
+            canaries: Canaries::new(&None)?,
             opt_enable_multiplier: true,
-        }
+        })
     }
 
     fn rule_check_module(
@@ -140,7 +149,51 @@ impl Evaluator {
         }
     }
 
+    fn variable_check(
+        &self,
+        source: &SourceFile,
+        de: &mut DensityEvaluator,
+        bulletins: &mut Bulletins,
+        alerts: &mut i32,
+    ) {
+        let canaries = self.canaries.get_canaries();
+        let locations = source.variable_visitor.get_locations();
+
+        let keys: Vec<String> = canaries.keys().map(|k| k.to_owned()).collect();
+        for (identifier, variable) in source.variable_visitor.get_variables() {
+            if variable.is_string() {
+                if let Some(str_var) = variable.get_string() {
+                    for key in &keys {
+                        if str_var.starts_with(key) {
+                            // shouldn't crash
+                            let canary_info = canaries.get(key).unwrap();
+                            let location = locations.get(identifier).unwrap();
+
+                            let notif = Bulletin::new(
+                                canary_info.identifier.to_string(),
+                                BulletinReason::Canary(format!("detected '{}' using transform '{}'", canary_info.identifier, canary_info.transform)),
+                                location.to_owned(),
+                                None,
+                                0.2f64,
+                            );
+                            bulletins.push(notif);
+                            de.add_density(FieldType::Strings, location.row(), 1.0f64, 1.0f64);
+                            *alerts += 1; // TODO: should have its own alert entry
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     pub fn evaluate(&self, analysis: &mut SourceAnalysis) {
+        self.variable_check(
+            &analysis.source,
+            &mut analysis.density_evaluator,
+            &mut analysis.bulletins,
+            &mut analysis.alerts_imports,
+        );
+
         for entry in analysis.source.get_imports() {
             self.misc_import_checks(
                 &analysis.source,

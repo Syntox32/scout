@@ -1,4 +1,5 @@
 mod bulletin;
+mod canary;
 mod density_evaluator;
 mod evaluator;
 mod hotspot;

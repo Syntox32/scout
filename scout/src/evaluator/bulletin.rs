@@ -9,6 +9,7 @@ pub enum BulletinReason {
     SuspiciousFunction,
     ImportInsideFunction,
     DynamicImport,
+    Canary(String),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,7 +51,7 @@ impl Bulletin {
     }
 
     pub fn reason(&self) -> String {
-        match self.reason {
+        match &self.reason {
             BulletinReason::SuspiciousImport => format!(
                 "The import '{}' is often used in malicious activity",
                 self.identifier
@@ -67,7 +68,10 @@ impl Bulletin {
             },
             BulletinReason::DynamicImport => {
                 "Functionality was dynamically imported (at runtime). This can be used to obfuscate malicious activity.".to_string()
-            }
+            },
+            BulletinReason::Canary(message) => {
+                format!("Canary triggered: {}", message)
+            },
         }
     }
 

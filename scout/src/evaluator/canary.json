@@ -1,0 +1,1682 @@
+{
+    "696D706F727": {
+        "identifier": "import",
+        "transform": "t_b16encode"
+    },
+    "5F5F696D706F72745F5": {
+        "identifier": "__import__",
+        "transform": "t_b16encode"
+    },
+    "6261736": {
+        "identifier": "base",
+        "transform": "t_b16encode"
+    },
+    "6576616": {
+        "identifier": "eval",
+        "transform": "t_b16encode"
+    },
+    "6578656": {
+        "identifier": "exec",
+        "transform": "t_b16encode"
+    },
+    "62617365363": {
+        "identifier": "base64",
+        "transform": "t_b16encode"
+    },
+    "7A6C696": {
+        "identifier": "zlib",
+        "transform": "t_b16encode"
+    },
+    "677A697": {
+        "identifier": "gzip",
+        "transform": "t_b16encode"
+    },
+    "75726C6C696": {
+        "identifier": "urllib",
+        "transform": "t_b16encode"
+    },
+    "687474703A2F2": {
+        "identifier": "http://",
+        "transform": "t_b16encode"
+    },
+    "68747470733A2F2": {
+        "identifier": "https://",
+        "transform": "t_b16encode"
+    },
+    "6674703A2F2": {
+        "identifier": "ftp://",
+        "transform": "t_b16encode"
+    },
+    "77733A2F2": {
+        "identifier": "ws://",
+        "transform": "t_b16encode"
+    },
+    "7773733A2F2": {
+        "identifier": "wss://",
+        "transform": "t_b16encode"
+    },
+    "6236346465636F646": {
+        "identifier": "b64decode",
+        "transform": "t_b16encode"
+    },
+    "6233326465636F646": {
+        "identifier": "b32decode",
+        "transform": "t_b16encode"
+    },
+    "6231366465636F646": {
+        "identifier": "b16decode",
+        "transform": "t_b16encode"
+    },
+    "6238356465636F646": {
+        "identifier": "b85decode",
+        "transform": "t_b16encode"
+    },
+    "6465636F646": {
+        "identifier": "decode",
+        "transform": "t_b16encode"
+    },
+    "23212F7573722": {
+        "identifier": "#!/usr/",
+        "transform": "t_b16encode"
+    },
+    "23212F62696E2": {
+        "identifier": "#!/bin/",
+        "transform": "t_b16encode"
+    },
+    "727F607D696": {
+        "identifier": "import",
+        "transform": "t_b16encode_rev"
+    },
+    "5F54727F607D696F5F5": {
+        "identifier": "__import__",
+        "transform": "t_b16encode_rev"
+    },
+    "6371626": {
+        "identifier": "base",
+        "transform": "t_b16encode_rev"
+    },
+    "6166756": {
+        "identifier": "eval",
+        "transform": "t_b16encode_rev"
+    },
+    "6568756": {
+        "identifier": "exec",
+        "transform": "t_b16encode_rev"
+    },
+    "36356371626": {
+        "identifier": "base64",
+        "transform": "t_b16encode_rev"
+    },
+    "696C6A7": {
+        "identifier": "zlib",
+        "transform": "t_b16encode_rev"
+    },
+    "796A776": {
+        "identifier": "gzip",
+        "transform": "t_b16encode_rev"
+    },
+    "696C6C62757": {
+        "identifier": "urllib",
+        "transform": "t_b16encode_rev"
+    },
+    "2F2A307474786": {
+        "identifier": "http://",
+        "transform": "t_b16encode_rev"
+    },
+    "2F2A33707474786": {
+        "identifier": "https://",
+        "transform": "t_b16encode_rev"
+    },
+    "2F2A3074766": {
+        "identifier": "ftp://",
+        "transform": "t_b16encode_rev"
+    },
+    "2F2A33777": {
+        "identifier": "ws://",
+        "transform": "t_b16encode_rev"
+    },
+    "2F2A3373777": {
+        "identifier": "wss://",
+        "transform": "t_b16encode_rev"
+    },
+    "646F6365646436326": {
+        "identifier": "b64decode",
+        "transform": "t_b16encode_rev"
+    },
+    "646F6365646233326": {
+        "identifier": "b32decode",
+        "transform": "t_b16encode_rev"
+    },
+    "646F6365646631326": {
+        "identifier": "b16decode",
+        "transform": "t_b16encode_rev"
+    },
+    "646F6365646538326": {
+        "identifier": "b85decode",
+        "transform": "t_b16encode_rev"
+    },
+    "646F6365646": {
+        "identifier": "decode",
+        "transform": "t_b16encode_rev"
+    },
+    "2273757F21232": {
+        "identifier": "#!/usr/",
+        "transform": "t_b16encode_rev"
+    },
+    "2E69626F21232": {
+        "identifier": "#!/bin/",
+        "transform": "t_b16encode_rev"
+    },
+    "NFWXA33SO": {
+        "identifier": "import",
+        "transform": "t_b32encode"
+    },
+    "L5PWS3LQN5ZHIX2": {
+        "identifier": "__import__",
+        "transform": "t_b32encode"
+    },
+    "MJQXGZ": {
+        "identifier": "base",
+        "transform": "t_b32encode"
+    },
+    "MV3GC3": {
+        "identifier": "eval",
+        "transform": "t_b32encode"
+    },
+    "MV4GKY": {
+        "identifier": "exec",
+        "transform": "t_b32encode"
+    },
+    "MJQXGZJWG": {
+        "identifier": "base64",
+        "transform": "t_b32encode"
+    },
+    "PJWGSY": {
+        "identifier": "zlib",
+        "transform": "t_b32encode"
+    },
+    "M55GS4": {
+        "identifier": "gzip",
+        "transform": "t_b32encode"
+    },
+    "OVZGY3DJM": {
+        "identifier": "urllib",
+        "transform": "t_b32encode"
+    },
+    "NB2HI4B2F4X": {
+        "identifier": "http://",
+        "transform": "t_b32encode"
+    },
+    "NB2HI4DTHIXS": {
+        "identifier": "https://",
+        "transform": "t_b32encode"
+    },
+    "MZ2HAORPF": {
+        "identifier": "ftp://",
+        "transform": "t_b32encode"
+    },
+    "O5ZTULZ": {
+        "identifier": "ws://",
+        "transform": "t_b32encode"
+    },
+    "O5ZXGORPF": {
+        "identifier": "wss://",
+        "transform": "t_b32encode"
+    },
+    "MI3DIZDFMNXWIZ": {
+        "identifier": "b64decode",
+        "transform": "t_b32encode"
+    },
+    "MIZTEZDFMNXWIZ": {
+        "identifier": "b32decode",
+        "transform": "t_b32encode"
+    },
+    "MIYTMZDFMNXWIZ": {
+        "identifier": "b16decode",
+        "transform": "t_b32encode"
+    },
+    "MI4DKZDFMNXWIZ": {
+        "identifier": "b85decode",
+        "transform": "t_b32encode"
+    },
+    "MRSWG33EM": {
+        "identifier": "decode",
+        "transform": "t_b32encode"
+    },
+    "EMQS65LTOIX": {
+        "identifier": "#!/usr/",
+        "transform": "t_b32encode"
+    },
+    "EMQS6YTJNYX": {
+        "identifier": "#!/bin/",
+        "transform": "t_b32encode"
+    },
+    "OS33AXWFN": {
+        "identifier": "import",
+        "transform": "t_b32encode_rev"
+    },
+    "2XIHZ5NQL3SWP5L": {
+        "identifier": "__import__",
+        "transform": "t_b32encode_rev"
+    },
+    "ZGXQJM": {
+        "identifier": "base",
+        "transform": "t_b32encode_rev"
+    },
+    "3CG3VM": {
+        "identifier": "eval",
+        "transform": "t_b32encode_rev"
+    },
+    "YKG4VM": {
+        "identifier": "exec",
+        "transform": "t_b32encode_rev"
+    },
+    "GWJZGXQJM": {
+        "identifier": "base64",
+        "transform": "t_b32encode_rev"
+    },
+    "YSGWJP": {
+        "identifier": "zlib",
+        "transform": "t_b32encode_rev"
+    },
+    "4SG55M": {
+        "identifier": "gzip",
+        "transform": "t_b32encode_rev"
+    },
+    "MJD3YGZVO": {
+        "identifier": "urllib",
+        "transform": "t_b32encode_rev"
+    },
+    "X4F2B4IH2BN": {
+        "identifier": "http://",
+        "transform": "t_b32encode_rev"
+    },
+    "SXIHTD4IH2BN": {
+        "identifier": "https://",
+        "transform": "t_b32encode_rev"
+    },
+    "FPROAH2ZM": {
+        "identifier": "ftp://",
+        "transform": "t_b32encode_rev"
+    },
+    "ZLUTZ5O": {
+        "identifier": "ws://",
+        "transform": "t_b32encode_rev"
+    },
+    "FPROGXZ5O": {
+        "identifier": "wss://",
+        "transform": "t_b32encode_rev"
+    },
+    "ZIWXNMFDZID3IM": {
+        "identifier": "b64decode",
+        "transform": "t_b32encode_rev"
+    },
+    "ZIWXNMFDZETZIM": {
+        "identifier": "b32decode",
+        "transform": "t_b32encode_rev"
+    },
+    "ZIWXNMFDZMTYIM": {
+        "identifier": "b16decode",
+        "transform": "t_b32encode_rev"
+    },
+    "ZIWXNMFDZKD4IM": {
+        "identifier": "b85decode",
+        "transform": "t_b32encode_rev"
+    },
+    "ME33GWSRM": {
+        "identifier": "decode",
+        "transform": "t_b32encode_rev"
+    },
+    "XIOTL56SQME": {
+        "identifier": "#!/usr/",
+        "transform": "t_b32encode_rev"
+    },
+    "XYNJTY6SQME": {
+        "identifier": "#!/bin/",
+        "transform": "t_b32encode_rev"
+    },
+    "aW1wb3J": {
+        "identifier": "import",
+        "transform": "t_b64encode"
+    },
+    "X19pbXBvcnRfX": {
+        "identifier": "__import__",
+        "transform": "t_b64encode"
+    },
+    "YmFzZ": {
+        "identifier": "base",
+        "transform": "t_b64encode"
+    },
+    "ZXZhb": {
+        "identifier": "eval",
+        "transform": "t_b64encode"
+    },
+    "ZXhlY": {
+        "identifier": "exec",
+        "transform": "t_b64encode"
+    },
+    "YmFzZTY": {
+        "identifier": "base64",
+        "transform": "t_b64encode"
+    },
+    "emxpY": {
+        "identifier": "zlib",
+        "transform": "t_b64encode"
+    },
+    "Z3ppc": {
+        "identifier": "gzip",
+        "transform": "t_b64encode"
+    },
+    "dXJsbGl": {
+        "identifier": "urllib",
+        "transform": "t_b64encode"
+    },
+    "aHR0cDovL": {
+        "identifier": "http://",
+        "transform": "t_b64encode"
+    },
+    "aHR0cHM6Ly": {
+        "identifier": "https://",
+        "transform": "t_b64encode"
+    },
+    "ZnRwOi8": {
+        "identifier": "ftp://",
+        "transform": "t_b64encode"
+    },
+    "d3M6Ly": {
+        "identifier": "ws://",
+        "transform": "t_b64encode"
+    },
+    "d3NzOi8": {
+        "identifier": "wss://",
+        "transform": "t_b64encode"
+    },
+    "YjY0ZGVjb2R": {
+        "identifier": "b64decode",
+        "transform": "t_b64encode"
+    },
+    "YjMyZGVjb2R": {
+        "identifier": "b32decode",
+        "transform": "t_b64encode"
+    },
+    "YjE2ZGVjb2R": {
+        "identifier": "b16decode",
+        "transform": "t_b64encode"
+    },
+    "Yjg1ZGVjb2R": {
+        "identifier": "b85decode",
+        "transform": "t_b64encode"
+    },
+    "ZGVjb2R": {
+        "identifier": "decode",
+        "transform": "t_b64encode"
+    },
+    "IyEvdXNyL": {
+        "identifier": "#!/usr/",
+        "transform": "t_b64encode"
+    },
+    "IyEvYmluL": {
+        "identifier": "#!/bin/",
+        "transform": "t_b64encode"
+    },
+    "J3bw1Wa": {
+        "identifier": "import",
+        "transform": "t_b64encode_rev"
+    },
+    "XfRncvBXbp91X": {
+        "identifier": "__import__",
+        "transform": "t_b64encode_rev"
+    },
+    "ZzFmY": {
+        "identifier": "base",
+        "transform": "t_b64encode_rev"
+    },
+    "bhZXZ": {
+        "identifier": "eval",
+        "transform": "t_b64encode_rev"
+    },
+    "YlhXZ": {
+        "identifier": "exec",
+        "transform": "t_b64encode_rev"
+    },
+    "YTZzFmY": {
+        "identifier": "base64",
+        "transform": "t_b64encode_rev"
+    },
+    "Ypxme": {
+        "identifier": "zlib",
+        "transform": "t_b64encode_rev"
+    },
+    "cpp3Z": {
+        "identifier": "gzip",
+        "transform": "t_b64encode_rev"
+    },
+    "lGbsJXd": {
+        "identifier": "urllib",
+        "transform": "t_b64encode_rev"
+    },
+    "LvoDc0RHa": {
+        "identifier": "http://",
+        "transform": "t_b64encode_rev"
+    },
+    "yL6MHc0RHa": {
+        "identifier": "https://",
+        "transform": "t_b64encode_rev"
+    },
+    "8iOwRnZ": {
+        "identifier": "ftp://",
+        "transform": "t_b64encode_rev"
+    },
+    "yL6M3d": {
+        "identifier": "ws://",
+        "transform": "t_b64encode_rev"
+    },
+    "8iOzN3d": {
+        "identifier": "wss://",
+        "transform": "t_b64encode_rev"
+    },
+    "R2bjVGZ0YjY": {
+        "identifier": "b64decode",
+        "transform": "t_b64encode_rev"
+    },
+    "R2bjVGZyMjY": {
+        "identifier": "b32decode",
+        "transform": "t_b64encode_rev"
+    },
+    "R2bjVGZ2EjY": {
+        "identifier": "b16decode",
+        "transform": "t_b64encode_rev"
+    },
+    "R2bjVGZ1gjY": {
+        "identifier": "b85decode",
+        "transform": "t_b64encode_rev"
+    },
+    "R2bjVGZ": {
+        "identifier": "decode",
+        "transform": "t_b64encode_rev"
+    },
+    "LyNXdvEyI": {
+        "identifier": "#!/usr/",
+        "transform": "t_b64encode_rev"
+    },
+    "LulmYvEyI": {
+        "identifier": "#!/bin/",
+        "transform": "t_b64encode_rev"
+    },
+    "X>D+Ca&": {
+        "identifier": "import",
+        "transform": "t_b85encode"
+    },
+    "Utei$aBp&SUt": {
+        "identifier": "__import__",
+        "transform": "t_b85encode"
+    },
+    "VqtS": {
+        "identifier": "base",
+        "transform": "t_b85encode"
+    },
+    "Wp-g": {
+        "identifier": "eval",
+        "transform": "t_b85encode"
+    },
+    "Wq4&": {
+        "identifier": "exec",
+        "transform": "t_b85encode"
+    },
+    "VqtS-HZ": {
+        "identifier": "base64",
+        "transform": "t_b85encode"
+    },
+    "dTeQ": {
+        "identifier": "zlib",
+        "transform": "t_b85encode"
+    },
+    "XL@O": {
+        "identifier": "gzip",
+        "transform": "t_b85encode"
+    },
+    "b#iQMX<": {
+        "identifier": "urllib",
+        "transform": "t_b85encode"
+    },
+    "XmoUNIxj": {
+        "identifier": "http://",
+        "transform": "t_b85encode"
+    },
+    "XmoUNb2|": {
+        "identifier": "https://",
+        "transform": "t_b85encode"
+    },
+    "W^`~mFE": {
+        "identifier": "ftp://",
+        "transform": "t_b85encode"
+    },
+    "cXK)~F": {
+        "identifier": "ws://",
+        "transform": "t_b85encode"
+    },
+    "cXM+(FE": {
+        "identifier": "wss://",
+        "transform": "t_b85encode"
+    },
+    "Vm35nWn*t-W": {
+        "identifier": "b64decode",
+        "transform": "t_b85encode"
+    },
+    "Vly&iWn*t-W": {
+        "identifier": "b32decode",
+        "transform": "t_b85encode"
+    },
+    "Vlg&kWn*t-W": {
+        "identifier": "b16decode",
+        "transform": "t_b85encode"
+    },
+    "VmLKqWn*t-W": {
+        "identifier": "b85decode",
+        "transform": "t_b85encode"
+    },
+    "WMyM-WM": {
+        "identifier": "decode",
+        "transform": "t_b85encode"
+    },
+    "BOxz!b8;": {
+        "identifier": "#!/usr/",
+        "transform": "t_b85encode"
+    },
+    "BOxzhX>K": {
+        "identifier": "#!/bin/",
+        "transform": "t_b85encode"
+    },
+    "&aC+D>X": {
+        "identifier": "import",
+        "transform": "t_b85encode_rev"
+    },
+    "tUS&pBa$ietU": {
+        "identifier": "__import__",
+        "transform": "t_b85encode_rev"
+    },
+    "StqV": {
+        "identifier": "base",
+        "transform": "t_b85encode_rev"
+    },
+    "g-pW": {
+        "identifier": "eval",
+        "transform": "t_b85encode_rev"
+    },
+    "&4qW": {
+        "identifier": "exec",
+        "transform": "t_b85encode_rev"
+    },
+    "ZH-StqV": {
+        "identifier": "base64",
+        "transform": "t_b85encode_rev"
+    },
+    "QeTd": {
+        "identifier": "zlib",
+        "transform": "t_b85encode_rev"
+    },
+    "O@LX": {
+        "identifier": "gzip",
+        "transform": "t_b85encode_rev"
+    },
+    "<XMQi#b": {
+        "identifier": "urllib",
+        "transform": "t_b85encode_rev"
+    },
+    "jxINUomX": {
+        "identifier": "http://",
+        "transform": "t_b85encode_rev"
+    },
+    "|2bNUomX": {
+        "identifier": "https://",
+        "transform": "t_b85encode_rev"
+    },
+    "EFm~`^W": {
+        "identifier": "ftp://",
+        "transform": "t_b85encode_rev"
+    },
+    "F~)KXc": {
+        "identifier": "ws://",
+        "transform": "t_b85encode_rev"
+    },
+    "EF(+MXc": {
+        "identifier": "wss://",
+        "transform": "t_b85encode_rev"
+    },
+    "W-t*nWn53mV": {
+        "identifier": "b64decode",
+        "transform": "t_b85encode_rev"
+    },
+    "W-t*nWi&ylV": {
+        "identifier": "b32decode",
+        "transform": "t_b85encode_rev"
+    },
+    "W-t*nWk&glV": {
+        "identifier": "b16decode",
+        "transform": "t_b85encode_rev"
+    },
+    "W-t*nWqKLmV": {
+        "identifier": "b85decode",
+        "transform": "t_b85encode_rev"
+    },
+    "MW-MyMW": {
+        "identifier": "decode",
+        "transform": "t_b85encode_rev"
+    },
+    ";8b!zxOB": {
+        "identifier": "#!/usr/",
+        "transform": "t_b85encode_rev"
+    },
+    "K>XhzxOB": {
+        "identifier": "#!/bin/",
+        "transform": "t_b85encode_rev"
+    },
+    "1F8B08004DC4456202FFCBCC2DC82F2A": {
+        "identifier": "import",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF8B8FCFCC2DC82F2A898F": {
+        "identifier": "__import__",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B4A2C4E": {
+        "identifier": "base",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B2D4BCC": {
+        "identifier": "eval",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4BAD484D": {
+        "identifier": "exec",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B4A2C4E3533": {
+        "identifier": "base64",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FFABCAC94C": {
+        "identifier": "zlib",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4BAFCA2C": {
+        "identifier": "gzip",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF2B2DCAC9C94C": {
+        "identifier": "urllib",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FFCB282929B0D2D7": {
+        "identifier": "http://",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FFCB28292928B6D2D7": {
+        "identifier": "https://",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B2B29B0D2D7": {
+        "identifier": "ftp://",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF2B2FB6D2D7": {
+        "identifier": "ws://",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF2B2F2EB6D2D7": {
+        "identifier": "wss://",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B323349494DCE4F49": {
+        "identifier": "b64decode",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B32364A494DCE4F49": {
+        "identifier": "b32decode",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B32344B494DCE4F49": {
+        "identifier": "b16decode",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4BB2304D494DCE4F49": {
+        "identifier": "b85decode",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF4B494DCE4F49": {
+        "identifier": "decode",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF5356D42F2D2ED2": {
+        "identifier": "#!/usr/",
+        "transform": "t_gzip_b16"
+    },
+    "1F8B08004DC4456202FF5356D44FCACCD3": {
+        "identifier": "#!/bin/",
+        "transform": "t_gzip_b16"
+    },
+    "D6FQQACNYRCWEAX7ZPGC3SBPF": {
+        "identifier": "import",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7ROH47TBNZAXSVCMP": {
+        "identifier": "__import__",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JNFCYT": {
+        "identifier": "base",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JMWUXT": {
+        "identifier": "eval",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JOWUQT": {
+        "identifier": "exec",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JNFCYTRVG": {
+        "identifier": "base64",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7VPFMST": {
+        "identifier": "zlib",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JOX4UL": {
+        "identifier": "gzip",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7FMW4VSOJJ": {
+        "identifier": "urllib",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7ZMUCSKNQ2LL": {
+        "identifier": "http://",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7ZMUCSKJIW3JNO": {
+        "identifier": "https://",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JMVSTMGS2": {
+        "identifier": "ftp://",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7FMX3NUWX": {
+        "identifier": "ws://",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7FMXS5NWS2": {
+        "identifier": "wss://",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JMZDGSKJJXHE6S": {
+        "identifier": "b64decode",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JMZDMSSJJXHE6S": {
+        "identifier": "b32decode",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JMZDIS2JJXHE6S": {
+        "identifier": "b16decode",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JOZDATKJJXHE6S": {
+        "identifier": "b85decode",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7JNEU3TSPJ": {
+        "identifier": "decode",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7KNLNILZNF3J": {
+        "identifier": "#!/usr/",
+        "transform": "t_gzip_b32"
+    },
+    "D6FQQACNYRCWEAX7KNLNIT6KZTJ": {
+        "identifier": "#!/bin/",
+        "transform": "t_gzip_b32"
+    },
+    "H4sIAE3ERWIC/8vMLcgvK": {
+        "identifier": "import",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/4uPz8wtyC8qiY": {
+        "identifier": "__import__",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0tKLE": {
+        "identifier": "base",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0stS8": {
+        "identifier": "eval",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0utSE": {
+        "identifier": "exec",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0tKLE41M": {
+        "identifier": "base64",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/6vKyU": {
+        "identifier": "zlib",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0uvyi": {
+        "identifier": "gzip",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/ystysnJT": {
+        "identifier": "urllib",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/8soKSmw0t": {
+        "identifier": "http://",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/8soKSkottLX": {
+        "identifier": "https://",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0srKbDS1": {
+        "identifier": "ftp://",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/ysvttLX": {
+        "identifier": "ws://",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/ysvLrbS1": {
+        "identifier": "wss://",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0syM0lJTc5PS": {
+        "identifier": "b64decode",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0syNkpJTc5PS": {
+        "identifier": "b32decode",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0syNEtJTc5PS": {
+        "identifier": "b16decode",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0uyME1JTc5PS": {
+        "identifier": "b85decode",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/0tJTc5PS": {
+        "identifier": "decode",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/1NW1C8tLt": {
+        "identifier": "#!/usr/",
+        "transform": "t_gzip_b64"
+    },
+    "H4sIAE3ERWIC/1NW1E/KzN": {
+        "identifier": "#!/bin/",
+        "transform": "t_gzip_b64"
+    },
+    "ABzY8O~gfF0{_d*Eyyn_": {
+        "identifier": "import",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@GT&&(~zFDi+T": {
+        "identifier": "__import__",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@&EK": {
+        "identifier": "base",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@bOU": {
+        "identifier": "eval",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{^`NK": {
+        "identifier": "exec",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@&EKW5u": {
+        "identifier": "base64",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{^SZ$x": {
+        "identifier": "zlib",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{^|$}": {
+        "identifier": "gzip",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{<&5%E`%0": {
+        "identifier": "urllib",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{_b>DJihh*": {
+        "identifier": "http://",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{_b>DJdwn($": {
+        "identifier": "https://",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@ZDX`Ml": {
+        "identifier": "ftp://",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{<&7w$j": {
+        "identifier": "ws://",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{<&7F1FIw": {
+        "identifier": "wss://",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@gGf7EJ&QD": {
+        "identifier": "b64decode",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@gHcClN&QD": {
+        "identifier": "b32decode",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@gG)qZM&QD": {
+        "identifier": "b16decode",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{_0FilBK&QD": {
+        "identifier": "b85decode",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{@%P0mkA": {
+        "identifier": "decode",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{>H1)GsYA(": {
+        "identifier": "#!/usr/",
+        "transform": "t_gzip_b85"
+    },
+    "ABzY8O~gfF0{>H1)KALH(": {
+        "identifier": "#!/bin/",
+        "transform": "t_gzip_b85"
+    },
+    "74726F706D6": {
+        "identifier": "import",
+        "transform": "t_rev_b16encode"
+    },
+    "5F5F74726F706D695F5": {
+        "identifier": "__import__",
+        "transform": "t_rev_b16encode"
+    },
+    "6573616": {
+        "identifier": "base",
+        "transform": "t_rev_b16encode"
+    },
+    "6C61766": {
+        "identifier": "eval",
+        "transform": "t_rev_b16encode"
+    },
+    "6365786": {
+        "identifier": "exec",
+        "transform": "t_rev_b16encode"
+    },
+    "34366573616": {
+        "identifier": "base64",
+        "transform": "t_rev_b16encode"
+    },
+    "62696C7": {
+        "identifier": "zlib",
+        "transform": "t_rev_b16encode"
+    },
+    "70697A6": {
+        "identifier": "gzip",
+        "transform": "t_rev_b16encode"
+    },
+    "62696C6C727": {
+        "identifier": "urllib",
+        "transform": "t_rev_b16encode"
+    },
+    "2F2F3A7074746": {
+        "identifier": "http://",
+        "transform": "t_rev_b16encode"
+    },
+    "2F2F3A737074746": {
+        "identifier": "https://",
+        "transform": "t_rev_b16encode"
+    },
+    "2F2F3A70746": {
+        "identifier": "ftp://",
+        "transform": "t_rev_b16encode"
+    },
+    "2F2F3A737": {
+        "identifier": "ws://",
+        "transform": "t_rev_b16encode"
+    },
+    "2F2F3A73737": {
+        "identifier": "wss://",
+        "transform": "t_rev_b16encode"
+    },
+    "65646F63656434366": {
+        "identifier": "b64decode",
+        "transform": "t_rev_b16encode"
+    },
+    "65646F63656432336": {
+        "identifier": "b32decode",
+        "transform": "t_rev_b16encode"
+    },
+    "65646F63656436316": {
+        "identifier": "b16decode",
+        "transform": "t_rev_b16encode"
+    },
+    "65646F63656435386": {
+        "identifier": "b85decode",
+        "transform": "t_rev_b16encode"
+    },
+    "65646F63656": {
+        "identifier": "decode",
+        "transform": "t_rev_b16encode"
+    },
+    "2F7273752F212": {
+        "identifier": "#!/usr/",
+        "transform": "t_rev_b16encode"
+    },
+    "2F6E69622F212": {
+        "identifier": "#!/bin/",
+        "transform": "t_rev_b16encode"
+    },
+    "ORZG64DNN": {
+        "identifier": "import",
+        "transform": "t_rev_b32encode"
+    },
+    "L5PXI4TPOBWWSX2": {
+        "identifier": "__import__",
+        "transform": "t_rev_b32encode"
+    },
+    "MVZWCY": {
+        "identifier": "base",
+        "transform": "t_rev_b32encode"
+    },
+    "NRQXMZ": {
+        "identifier": "eval",
+        "transform": "t_rev_b32encode"
+    },
+    "MNSXQZ": {
+        "identifier": "exec",
+        "transform": "t_rev_b32encode"
+    },
+    "GQ3GK43BM": {
+        "identifier": "base64",
+        "transform": "t_rev_b32encode"
+    },
+    "MJUWY6": {
+        "identifier": "zlib",
+        "transform": "t_rev_b32encode"
+    },
+    "OBUXUZ": {
+        "identifier": "gzip",
+        "transform": "t_rev_b32encode"
+    },
+    "MJUWY3DSO": {
+        "identifier": "urllib",
+        "transform": "t_rev_b32encode"
+    },
+    "F4XTU4DUORU": {
+        "identifier": "http://",
+        "transform": "t_rev_b32encode"
+    },
+    "F4XTU43QOR2G": {
+        "identifier": "https://",
+        "transform": "t_rev_b32encode"
+    },
+    "F4XTU4DUM": {
+        "identifier": "ftp://",
+        "transform": "t_rev_b32encode"
+    },
+    "F4XTU43": {
+        "identifier": "ws://",
+        "transform": "t_rev_b32encode"
+    },
+    "F4XTU43TO": {
+        "identifier": "wss://",
+        "transform": "t_rev_b32encode"
+    },
+    "MVSG6Y3FMQ2DMY": {
+        "identifier": "b64decode",
+        "transform": "t_rev_b32encode"
+    },
+    "MVSG6Y3FMQZDGY": {
+        "identifier": "b32decode",
+        "transform": "t_rev_b32encode"
+    },
+    "MVSG6Y3FMQ3DCY": {
+        "identifier": "b16decode",
+        "transform": "t_rev_b32encode"
+    },
+    "MVSG6Y3FMQ2TQY": {
+        "identifier": "b85decode",
+        "transform": "t_rev_b32encode"
+    },
+    "MVSG6Y3FM": {
+        "identifier": "decode",
+        "transform": "t_rev_b32encode"
+    },
+    "F5ZHG5JPEER": {
+        "identifier": "#!/usr/",
+        "transform": "t_rev_b32encode"
+    },
+    "F5XGSYRPEER": {
+        "identifier": "#!/bin/",
+        "transform": "t_rev_b32encode"
+    },
+    "dHJvcG1": {
+        "identifier": "import",
+        "transform": "t_rev_b64encode"
+    },
+    "X190cm9wbWlfX": {
+        "identifier": "__import__",
+        "transform": "t_rev_b64encode"
+    },
+    "ZXNhY": {
+        "identifier": "base",
+        "transform": "t_rev_b64encode"
+    },
+    "bGF2Z": {
+        "identifier": "eval",
+        "transform": "t_rev_b64encode"
+    },
+    "Y2V4Z": {
+        "identifier": "exec",
+        "transform": "t_rev_b64encode"
+    },
+    "NDZlc2F": {
+        "identifier": "base64",
+        "transform": "t_rev_b64encode"
+    },
+    "Ymlse": {
+        "identifier": "zlib",
+        "transform": "t_rev_b64encode"
+    },
+    "cGl6Z": {
+        "identifier": "gzip",
+        "transform": "t_rev_b64encode"
+    },
+    "YmlsbHJ": {
+        "identifier": "urllib",
+        "transform": "t_rev_b64encode"
+    },
+    "Ly86cHR0a": {
+        "identifier": "http://",
+        "transform": "t_rev_b64encode"
+    },
+    "Ly86c3B0dG": {
+        "identifier": "https://",
+        "transform": "t_rev_b64encode"
+    },
+    "Ly86cHR": {
+        "identifier": "ftp://",
+        "transform": "t_rev_b64encode"
+    },
+    "Ly86c3": {
+        "identifier": "ws://",
+        "transform": "t_rev_b64encode"
+    },
+    "Ly86c3N": {
+        "identifier": "wss://",
+        "transform": "t_rev_b64encode"
+    },
+    "ZWRvY2VkNDZ": {
+        "identifier": "b64decode",
+        "transform": "t_rev_b64encode"
+    },
+    "ZWRvY2VkMjN": {
+        "identifier": "b32decode",
+        "transform": "t_rev_b64encode"
+    },
+    "ZWRvY2VkNjF": {
+        "identifier": "b16decode",
+        "transform": "t_rev_b64encode"
+    },
+    "ZWRvY2VkNTh": {
+        "identifier": "b85decode",
+        "transform": "t_rev_b64encode"
+    },
+    "ZWRvY2V": {
+        "identifier": "decode",
+        "transform": "t_rev_b64encode"
+    },
+    "L3JzdS8hI": {
+        "identifier": "#!/usr/",
+        "transform": "t_rev_b64encode"
+    },
+    "L25pYi8hI": {
+        "identifier": "#!/bin/",
+        "transform": "t_rev_b64encode"
+    },
+    "baHQSZD": {
+        "identifier": "import",
+        "transform": "t_rev_b85encode"
+    },
+    "Ute@`Z*XmCUt": {
+        "identifier": "__import__",
+        "transform": "t_rev_b85encode"
+    },
+    "WpiO": {
+        "identifier": "base",
+        "transform": "t_rev_b85encode"
+    },
+    "Y+-g": {
+        "identifier": "eval",
+        "transform": "t_rev_b85encode"
+    },
+    "V`X?": {
+        "identifier": "exec",
+        "transform": "t_rev_b85encode"
+    },
+    "G&W^(VP": {
+        "identifier": "base64",
+        "transform": "t_rev_b85encode"
+    },
+    "Vrgu": {
+        "identifier": "zlib",
+        "transform": "t_rev_b85encode"
+    },
+    "aA|s": {
+        "identifier": "gzip",
+        "transform": "t_rev_b85encode"
+    },
+    "Vrgt_a&": {
+        "identifier": "urllib",
+        "transform": "t_rev_b85encode"
+    },
+    "FE2W9baZ": {
+        "identifier": "http://",
+        "transform": "t_rev_b85encode"
+    },
+    "FE2WCaCCH": {
+        "identifier": "https://",
+        "transform": "t_rev_b85encode"
+    },
+    "FE2W9b": {
+        "identifier": "ftp://",
+        "transform": "t_rev_b85encode"
+    },
+    "FE2WCc": {
+        "identifier": "ws://",
+        "transform": "t_rev_b85encode"
+    },
+    "FE2WCb9": {
+        "identifier": "wss://",
+        "transform": "t_rev_b85encode"
+    },
+    "Wn^z-Wn?rqV": {
+        "identifier": "b64decode",
+        "transform": "t_rev_b85encode"
+    },
+    "Wn^z-Wn?llV": {
+        "identifier": "b32decode",
+        "transform": "t_rev_b85encode"
+    },
+    "Wn^z-Wn?xnV": {
+        "identifier": "b16decode",
+        "transform": "t_rev_b85encode"
+    },
+    "Wn^z-Wn?utV": {
+        "identifier": "b85decode",
+        "transform": "t_rev_b85encode"
+    },
+    "Wn^z-W": {
+        "identifier": "decode",
+        "transform": "t_rev_b85encode"
+    },
+    "FLHBrFCi": {
+        "identifier": "#!/usr/",
+        "transform": "t_rev_b85encode"
+    },
+    "FK%gKFCi": {
+        "identifier": "#!/bin/",
+        "transform": "t_rev_b85encode"
+    },
+    "789CCBCC2DC82F2A": {
+        "identifier": "import",
+        "transform": "t_zlib_b16"
+    },
+    "789C8B8FCFCC2DC82F2A898F": {
+        "identifier": "__import__",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B4A2C4E": {
+        "identifier": "base",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B2D4BCC": {
+        "identifier": "eval",
+        "transform": "t_zlib_b16"
+    },
+    "789C4BAD484D": {
+        "identifier": "exec",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B4A2C4E3533": {
+        "identifier": "base64",
+        "transform": "t_zlib_b16"
+    },
+    "789CABCAC94C": {
+        "identifier": "zlib",
+        "transform": "t_zlib_b16"
+    },
+    "789C4BAFCA2C": {
+        "identifier": "gzip",
+        "transform": "t_zlib_b16"
+    },
+    "789C2B2DCAC9C94C": {
+        "identifier": "urllib",
+        "transform": "t_zlib_b16"
+    },
+    "789CCB282929B0D2D7": {
+        "identifier": "http://",
+        "transform": "t_zlib_b16"
+    },
+    "789CCB28292928B6D2D7": {
+        "identifier": "https://",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B2B29B0D2D7": {
+        "identifier": "ftp://",
+        "transform": "t_zlib_b16"
+    },
+    "789C2B2FB6D2D7": {
+        "identifier": "ws://",
+        "transform": "t_zlib_b16"
+    },
+    "789C2B2F2EB6D2D7": {
+        "identifier": "wss://",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B323349494DCE4F49": {
+        "identifier": "b64decode",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B32364A494DCE4F49": {
+        "identifier": "b32decode",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B32344B494DCE4F49": {
+        "identifier": "b16decode",
+        "transform": "t_zlib_b16"
+    },
+    "789C4BB2304D494DCE4F49": {
+        "identifier": "b85decode",
+        "transform": "t_zlib_b16"
+    },
+    "789C4B494DCE4F49": {
+        "identifier": "decode",
+        "transform": "t_zlib_b16"
+    },
+    "789C5356D42F2D2ED2": {
+        "identifier": "#!/usr/",
+        "transform": "t_zlib_b16"
+    },
+    "789C5356D44FCACCD3": {
+        "identifier": "#!/bin/",
+        "transform": "t_zlib_b16"
+    },
+    "PCOMXTBNZAXSU": {
+        "identifier": "import",
+        "transform": "t_zlib_b32"
+    },
+    "PCOIXD6PZQW4QLZKRGH": {
+        "identifier": "__import__",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWSRMJ": {
+        "identifier": "base",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWLKLZ": {
+        "identifier": "eval",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEXLKIJ": {
+        "identifier": "exec",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWSRMJY2TG": {
+        "identifier": "base64",
+        "transform": "t_zlib_b32"
+    },
+    "PCOKXSWJJ": {
+        "identifier": "zlib",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEXL6KF": {
+        "identifier": "gzip",
+        "transform": "t_zlib_b32"
+    },
+    "PCOCWLOKZHEUY": {
+        "identifier": "urllib",
+        "transform": "t_zlib_b32"
+    },
+    "PCOMWKBJFGYNFV": {
+        "identifier": "http://",
+        "transform": "t_zlib_b32"
+    },
+    "PCOMWKBJFEULNUWX": {
+        "identifier": "https://",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWKZJWDJNO": {
+        "identifier": "ftp://",
+        "transform": "t_zlib_b32"
+    },
+    "PCOCWL5W2LL": {
+        "identifier": "ws://",
+        "transform": "t_zlib_b32"
+    },
+    "PCOCWLZOW3JNO": {
+        "identifier": "wss://",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWMRTJFEU3TSPJ": {
+        "identifier": "b64decode",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWMRWJJEU3TSPJ": {
+        "identifier": "b32decode",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWMRUJNEU3TSPJ": {
+        "identifier": "b16decode",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEXMRQJVEU3TSPJ": {
+        "identifier": "b85decode",
+        "transform": "t_zlib_b32"
+    },
+    "PCOEWSKNZZHUS": {
+        "identifier": "decode",
+        "transform": "t_zlib_b32"
+    },
+    "PCOFGVWUF4WS5U": {
+        "identifier": "#!/usr/",
+        "transform": "t_zlib_b32"
+    },
+    "PCOFGVWUJ7FMZU": {
+        "identifier": "#!/bin/",
+        "transform": "t_zlib_b32"
+    },
+    "eJzLzC3ILy": {
+        "identifier": "import",
+        "transform": "t_zlib_b64"
+    },
+    "eJyLj8/MLcgvKomP": {
+        "identifier": "__import__",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLSixO": {
+        "identifier": "base",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLLUvM": {
+        "identifier": "eval",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLrUhN": {
+        "identifier": "exec",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLSixONT": {
+        "identifier": "base64",
+        "transform": "t_zlib_b64"
+    },
+    "eJyryslM": {
+        "identifier": "zlib",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLr8os": {
+        "identifier": "gzip",
+        "transform": "t_zlib_b64"
+    },
+    "eJwrLcrJyU": {
+        "identifier": "urllib",
+        "transform": "t_zlib_b64"
+    },
+    "eJzLKCkpsNLX": {
+        "identifier": "http://",
+        "transform": "t_zlib_b64"
+    },
+    "eJzLKCkpKLbS1": {
+        "identifier": "https://",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLKymw0t": {
+        "identifier": "ftp://",
+        "transform": "t_zlib_b64"
+    },
+    "eJwrL7bS1": {
+        "identifier": "ws://",
+        "transform": "t_zlib_b64"
+    },
+    "eJwrLy620t": {
+        "identifier": "wss://",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLMjNJSU3OT0": {
+        "identifier": "b64decode",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLMjZKSU3OT0": {
+        "identifier": "b32decode",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLMjRLSU3OT0": {
+        "identifier": "b16decode",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLsjBNSU3OT0": {
+        "identifier": "b85decode",
+        "transform": "t_zlib_b64"
+    },
+    "eJxLSU3OT0": {
+        "identifier": "decode",
+        "transform": "t_zlib_b64"
+    },
+    "eJxTVtQvLS7S": {
+        "identifier": "#!/usr/",
+        "transform": "t_zlib_b64"
+    },
+    "eJxTVtRPyszT": {
+        "identifier": "#!/bin/",
+        "transform": "t_zlib_b64"
+    },
+    "c$~}3Eyyn_": {
+        "identifier": "import",
+        "transform": "t_zlib_b85"
+    },
+    "c$|xm&&(~zFDi+T": {
+        "identifier": "__import__",
+        "transform": "t_zlib_b85"
+    },
+    "c$`a0EK": {
+        "identifier": "base",
+        "transform": "t_zlib_b85"
+    },
+    "c$`ZuOU": {
+        "identifier": "eval",
+        "transform": "t_zlib_b85"
+    },
+    "c$`bENK": {
+        "identifier": "exec",
+        "transform": "t_zlib_b85"
+    },
+    "c$`a0EKW5u": {
+        "identifier": "base64",
+        "transform": "t_zlib_b85"
+    },
+    "c$}-s$x": {
+        "identifier": "zlib",
+        "transform": "t_zlib_b85"
+    },
+    "c$`bG$}": {
+        "identifier": "gzip",
+        "transform": "t_zlib_b85"
+    },
+    "c$_OO%E`%0": {
+        "identifier": "urllib",
+        "transform": "t_zlib_b85"
+    },
+    "c$~{9DJihh*": {
+        "identifier": "http://",
+        "transform": "t_zlib_b85"
+    },
+    "c$~{9DJdwn($": {
+        "identifier": "https://",
+        "transform": "t_zlib_b85"
+    },
+    "c$`ZsDX`Ml": {
+        "identifier": "ftp://",
+        "transform": "t_zlib_b85"
+    },
+    "c$_OQw$j": {
+        "identifier": "ws://",
+        "transform": "t_zlib_b85"
+    },
+    "c$_OQF1FIw": {
+        "identifier": "wss://",
+        "transform": "t_zlib_b85"
+    },
+    "c$`ZzGf7EJ&QD": {
+        "identifier": "b64decode",
+        "transform": "t_zlib_b85"
+    },
+    "c$`ZzHcClN&QD": {
+        "identifier": "b32decode",
+        "transform": "t_zlib_b85"
+    },
+    "c$`ZzG)qZM&QD": {
+        "identifier": "b16decode",
+        "transform": "t_zlib_b85"
+    },
+    "c$`bJFilBK&QD": {
+        "identifier": "b85decode",
+        "transform": "t_zlib_b85"
+    },
+    "c$`Z~P0mkA": {
+        "identifier": "decode",
+        "transform": "t_zlib_b85"
+    },
+    "c$`yK)GsYA(": {
+        "identifier": "#!/usr/",
+        "transform": "t_zlib_b85"
+    },
+    "c$`yK)KALH(": {
+        "identifier": "#!/bin/",
+        "transform": "t_zlib_b85"
+    }
+}

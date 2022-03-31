@@ -1,7 +1,10 @@
-use std::{collections::HashMap, mem};
+use std::{collections::HashMap, hash::Hash, mem};
 
 use ast_walker::AstVisitor;
-use rustpython_parser::ast::{Expression, ExpressionType, Keyword, Operator};
+use rustpython_parser::{
+    ast::{Expression, ExpressionType, Keyword, Located, Operator},
+    location::Location,
+};
 
 use crate::utils::{
     ast::{do_binop, resolve_binop, try_identifier, try_to_string},
@@ -50,17 +53,23 @@ impl VariableType {
 #[derive(Debug)]
 pub struct VariableVisitor {
     variables: HashMap<String, VariableType>,
+    locations: HashMap<String, Location>,
 }
 
 impl VariableVisitor {
     pub fn new() -> Self {
         Self {
             variables: HashMap::new(),
+            locations: HashMap::new(),
         }
     }
 
     pub fn get_variables(&self) -> &HashMap<String, VariableType> {
         &self.variables
+    }
+
+    pub fn get_locations(&self) -> &HashMap<String, Location> {
+        &self.locations
     }
 
     #[allow(unused)]
@@ -124,7 +133,8 @@ impl AstVisitor for VariableVisitor {
 
         for (t, v) in target.iter().zip(values.into_iter()) {
             if let Some(ident) = try_to_string(t) {
-                self.variables.insert(ident, v);
+                self.variables.insert(ident.clone(), v);
+                self.locations.insert(ident, t.location);
             }
         }
 

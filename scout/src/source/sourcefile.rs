@@ -76,6 +76,7 @@ pub struct SourceFile {
     pub constants: Vec<String>,
     import_visitor: ImportVisitor,
     call_visitor: CallVisitor,
+    pub variable_visitor: VariableVisitor,
 }
 
 impl SourceFile {
@@ -155,6 +156,7 @@ impl SourceFile {
             constants: vec![],
             import_visitor,
             call_visitor: function_visitor,
+            variable_visitor,
         };
 
         Ok(sf)
