@@ -17,7 +17,7 @@ pub use source::SourceFile;
 pub use engine::Engine;
 
 use std::error;
-pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
+pub type Result<T> = std::result::Result<T, Box<dyn error::Error + Send + Sync>>;
 
 mod engine {
 
@@ -101,7 +101,7 @@ mod engine {
                 self.opt_show_all,
                 &self.config,
             )?
-                .analyse()?;
+            .analyse()?;
             Ok(results)
         }
 
@@ -126,7 +126,7 @@ mod engine {
                 self.opt_show_all,
                 &self.config,
             )?
-                .analyse_single()?;
+            .analyse_single()?;
             Ok(results)
         }
     }
