@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{utils, SourceFile};
+use crate::SourceFile;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Hotspot {
@@ -31,8 +31,8 @@ impl Hotspot {
     }
 
     pub fn get_code<'a>(&self, source: &'a SourceFile) -> Vec<(usize, String)> {
-        let source = utils::load_from_file(&source.source_path).unwrap();
         let hotspot_code: Vec<(usize, String)> = source
+            .get_source()
             .lines()
             .enumerate()
             .map(|(idx, s)| (idx, s.to_owned()))
