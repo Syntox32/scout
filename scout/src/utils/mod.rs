@@ -72,41 +72,41 @@ pub fn collect_files_matching(
     matches
 }
 
-pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
-    let mut all_files: Box<Vec<PathBuf>> = Box::new(vec![]);
+// pub fn collect_files(path: &Path, ending: &'static str) -> Box<Vec<PathBuf>> {
+//     let mut all_files: Box<Vec<PathBuf>> = Box::new(vec![]);
 
-    let mut _count = 0;
-    for entry in WalkDir::new(path).follow_links(false) {
-        // if count > 200 {
-        //     return all_files;
-        // }
-        // count += 1;
-        if let Ok(e) = entry {
-            let p = e.path().to_path_buf();
-            if p.is_file() {
-                if let Some(filename) = p.file_name() {
-                    if filename.to_str().unwrap().ends_with(ending) {
-                        all_files.push(p);
-                        // println!("{} size of all_files vec: {}", count, all_files.len());
-                    }
-                }
-            }
-        }
-    }
+//     let mut _count = 0;
+//     for entry in WalkDir::new(path).follow_links(false) {
+//         // if count > 200 {
+//         //     return all_files;
+//         // }
+//         // count += 1;
+//         if let Ok(e) = entry {
+//             let p = e.path().to_path_buf();
+//             if p.is_file() {
+//                 if let Some(filename) = p.file_name() {
+//                     if filename.to_str().unwrap().ends_with(ending) {
+//                         all_files.push(p);
+//                         // println!("{} size of all_files vec: {}", count, all_files.len());
+//                     }
+//                 }
+//             }
+//         }
+//     }
 
-    // let mut count = 0;
-    // for entry in WalkDir::new(path)
-    //     .into_iter()
-    //     .filter_map(|e| e.ok())
-    //     .filter(|e| e.path().is_file())
-    //     .filter(|f| f.path().file_name().unwrap().to_str().unwrap().ends_with(ending))
-    // {
+//     // let mut count = 0;
+//     // for entry in WalkDir::new(path)
+//     //     .into_iter()
+//     //     .filter_map(|e| e.ok())
+//     //     .filter(|e| e.path().is_file())
+//     //     .filter(|f| f.path().file_name().unwrap().to_str().unwrap().ends_with(ending))
+//     // {
 
-    //     all_files.push(Box::new(entry));
-    // }
+//     //     all_files.push(Box::new(entry));
+//     // }
 
-    all_files
-}
+//     all_files
+// }
 
 pub fn _stack_size<T>(v: &Vec<T>) -> usize {
     let mut s: usize = 0;
@@ -177,7 +177,6 @@ mod tests {
 }
 
 pub mod ast {
-    use ron::value;
     use rustpython_parser::ast::{Expression, ExpressionType, Keyword, Operator, StringGroup};
 
     use crate::visitors::VariableType;

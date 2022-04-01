@@ -1,18 +1,16 @@
 use crate::utils::{self, ast::resolve_kwargs};
 
 use ast_walker::AstVisitor;
-use rustpython_parser::{
-    ast::{Expression, ExpressionType, Keyword, Operator, StringGroup},
-    location::Location,
-};
+use rustpython_parser::ast::{Expression, ExpressionType, Keyword};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     hash::{Hash, Hasher},
 };
 
-use super::{variable_visitor::VariableType, VariableVisitor};
+use super::{variable_visitor::VariableType, Location};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CallEntry {
     pub full_identifier: String,
     pub location: Location,
@@ -54,7 +52,7 @@ impl PartialEq for CallEntry {
 
 impl Eq for CallEntry {}
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CallVisitor {
     entries: Vec<CallEntry>,
     errors: Vec<(String, Location)>,
@@ -179,7 +177,8 @@ impl CallVisitor {
                     expr.name()
                 );
                 trace!("{}", &e);
-                self.errors.push((e, expr.location));
+                self.errors
+                    .push((e, Location::from_rustpython(expr.location)));
                 None
             }
         }
@@ -211,7 +210,7 @@ impl AstVisitor for CallVisitor {
             let kw = resolve_kwargs(keywords);
             let entry = CallEntry {
                 full_identifier: f,
-                location: function.location,
+                location: Location::from_rustpython(function.location),
                 args,
                 keywords: kw,
             };

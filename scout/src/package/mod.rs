@@ -1,22 +1,28 @@
 use crate::{
     evaluator::{AnalysisResult, Evaluator, RuleManager, SourceAnalysis},
     source::SourceFile,
-    utils::{self, collect_files},
+    utils::{self},
     visitors::VariableType,
-    Result,
+    Config, Result,
 };
 use colored::Colorize;
+
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
     str::FromStr,
 };
+use walkdir::WalkDir;
 
-pub struct Package {
+use rayon::prelude::*;
+use tokio::runtime::Runtime;
+
+pub struct Package<'cfg> {
     pub path: PathBuf,
     checker: Evaluator,
     threshold: f64,
     show_all_override: bool,
+    config: &'cfg Config,
 }
 
 #[derive(Debug)]
@@ -31,59 +37,50 @@ impl Metadata {
     }
 }
 
-impl Package {
+impl<'cfg> Package<'cfg> {
     pub fn new(
         path: PathBuf,
         rules: RuleManager,
         threshold: f64,
         show_all_override: bool,
+        config: &'cfg Config,
     ) -> Result<Self> {
         Ok(Self {
             path: path.to_owned(),
             checker: Evaluator::new(rules.get_rule_sets())?,
             threshold,
             show_all_override,
+            config,
         })
     }
 
-    fn add_sourcefile(&self, path: &PathBuf, target: &mut Vec<SourceFile>) -> Result<()> {
-        match SourceFile::load(path) {
-            Ok(source) => {
-                target.push(source);
-                Ok(())
-            }
-            Err(err) => Err(format!("Could not add source: {}", err.to_string()).into()),
-        }
-    }
-
-    fn load_sources(&self) -> Vec<SourceFile> {
-        trace!("Ackquiring sources...");
-
-        let mut sources: Vec<SourceFile> = vec![];
-        let files = collect_files(&self.path, ".py");
-
-        for file in files.iter() {
-            trace!("Loading file: {:?}", file.file_name());
-            let _ = self.add_sourcefile(file, &mut sources);
-        }
-
-        sources
-    }
+    // fn add_sourcefile(&self, path: &PathBuf, target: &mut Vec<SourceFile>) -> Result<()> {
+    //     let source = block_on(tokio::fs::read_to_string(path))?;
+    //     match SourceFile::load(path, source) {
+    //         Ok(source) => {
+    //             target.push(source);
+    //             Ok(())
+    //         }
+    //         Err(err) => Err(format!("Could not add source: {}", err.to_string()).into()),
+    //     }
+    // }
 
     pub fn analyse(self) -> Result<AnalysisResult> {
-        let results: Vec<SourceAnalysis> = self.run_pipeline(self.load_sources())?;
+        let analyses: Vec<SourceAnalysis> = self.get_source_analyses()?;
+        let results = self.run_evaluation(analyses)?;
 
-        let metadata = match self.get_metadata(&self.path) {
-            Ok(metadata) => Some(metadata),
-            Err(err) => {
-                error!(
-                    "Error getting metadate for package '{}' in package '{}'",
-                    err.to_string(),
-                    &self.path.as_path().to_str().unwrap()
-                );
-                None
-            }
-        };
+        // let metadata = match self.get_metadata(&self.path) {
+        //     Ok(metadata) => Some(metadata),
+        //     Err(err) => {
+        //         error!(
+        //             "Error getting metadate for package '{}' in package '{}'",
+        //             err.to_string(),
+        //             &self.path.as_path().to_str().unwrap()
+        //         );
+        //         None
+        //     }
+        // };
+        let metadata = None;
 
         Ok(AnalysisResult::new(results, metadata))
     }
@@ -94,31 +91,93 @@ impl Package {
             &self.path.as_path().as_os_str().to_str().unwrap()
         );
 
-        let mut sources: Vec<SourceFile> = vec![];
-        self.add_sourcefile(&self.path, &mut sources)?;
-        let source = sources.pop().unwrap();
+        let source = std::fs::read_to_string(&self.path)?;
+        let source = self.get_sourcefile(&self.path, source)?;
 
-        let results: Vec<SourceAnalysis> = self.run_pipeline(vec![source])?;
+        let analyses: Vec<SourceAnalysis> = self.run_precalc(vec![source])?;
+        let results = self.run_evaluation(analyses)?;
 
         Ok(AnalysisResult::new(results, None))
     }
 
-    fn run_pipeline(&self, sources: Vec<SourceFile>) -> Result<Vec<SourceAnalysis>> {
-        let mut analyses: Vec<SourceAnalysis> = vec![];
+    fn get_from_cache(&self) -> Result<Vec<SourceAnalysis>> {
+        let json = std::fs::read_to_string("cache.json")?;
+        let obj: Vec<SourceAnalysis> = serde_json::from_str(json.as_str())?;
+        Ok(obj)
+    }
 
-        for source in sources {
-            analyses.push(SourceAnalysis::new(
-                source,
-                self.show_all_override,
-                self.threshold,
-            ));
+    fn save_to_cache(&self, analyses: &Vec<SourceAnalysis>) -> Result<()> {
+        let json = serde_json::to_string(analyses)?;
+        std::fs::write("cache.json", json)?;
+        Ok(())
+    }
+
+    fn get_source_analyses(&self) -> Result<Vec<SourceAnalysis>> {
+        if self.config.use_cache {
+            return self.get_from_cache();
         }
 
-        self.calculate_import_tfidf(&mut analyses);
-        self.calculate_call_tfidf(&mut analyses);
+        let sources = self.load_sources()?;
+        let analyses = self.run_precalc(sources)?;
 
+        if self.config.save_cache {
+            self.save_to_cache(&analyses)?;
+        }
+
+        Ok(analyses)
+    }
+
+    fn get_sourcefile(&self, path: &PathBuf, source: String) -> Result<SourceFile> {
+        match SourceFile::load(path, source) {
+            Ok(source) => Ok(source),
+            Err(err) => Err(format!("Could not add source: {}", err.to_string()).into()),
+        }
+    }
+
+    async fn get_file(&self, path: &Path) -> Result<String> {
+        Ok(tokio::fs::read_to_string(path).await?)
+    }
+
+    // fn get_source<F: Future>(&self, entries: Vec<walkdir::DirEntry>) -> Vec<(&Path, String)> {
+
+    //     results
+    // }
+
+    fn load_sources(&self) -> Result<Vec<SourceFile>> {
+        trace!("Ackquiring sources...");
+
+        let entries = WalkDir::new(&self.path)
+            .follow_links(false)
+            .into_iter()
+            .filter(|e| e.is_ok())
+            .map(|e| e.unwrap());
+        // .collect::<Vec<walkdir::DirEntry>>();
+
+        let results = async {
+            let mut sources: Vec<(PathBuf, String)> = vec![];
+            for entry in entries {
+                if let Ok(source) = self.get_file(entry.path()).await {
+                    sources.push((entry.path().to_owned(), source));
+                }
+            }
+            sources
+        };
+
+        let rt = Runtime::new()?;
+        let results = rt.block_on(results);
+
+        let source: Vec<SourceFile> = results
+            .into_par_iter()
+            .filter_map(|(e, source)| self.get_sourcefile(&e, source).ok())
+            .collect();
+
+        // let val = Arc::try_unwrap(target).unwrap().into_inner().unwrap();
+        Ok(source)
+    }
+
+    fn run_evaluation(&self, mut analyses: Vec<SourceAnalysis>) -> Result<Vec<SourceAnalysis>> {
         for analysis in analyses.iter_mut() {
-            self.checker.evaluate(analysis);
+            self.checker.evaluate(analysis, self.config);
 
             if let Some(report) = self.create_evaluation_report(&analysis) {
                 analysis.message = Some(report);
@@ -135,6 +194,25 @@ impl Package {
                 }
             })
             .collect();
+
+        Ok(analyses)
+    }
+
+    fn run_precalc(&self, sources: Vec<SourceFile>) -> Result<Vec<SourceAnalysis>> {
+        let mut analyses: Vec<SourceAnalysis> = sources
+            .into_iter()
+            .map(|source| {
+                SourceAnalysis::new(source, self.show_all_override, self.threshold, self.config)
+            })
+            .collect();
+
+        if self.config.feature_tfidf_imports {
+            self.calculate_import_tfidf(&mut analyses);
+        }
+
+        if self.config.feature_tfidf_calls {
+            self.calculate_call_tfidf(&mut analyses);
+        }
 
         Ok(analyses)
     }
@@ -182,7 +260,7 @@ impl Package {
         cases_with_term / num_cases
     }
 
-    fn calc_idf(&self, num_cases: f64, cases_with_term: f64) -> f64 {
+    fn _calc_idf(&self, num_cases: f64, cases_with_term: f64) -> f64 {
         (num_cases / cases_with_term).ln()
     }
 
@@ -358,9 +436,11 @@ impl Package {
     fn parse_deps_from_setup(&self, path: &PathBuf) -> Result<Vec<String>> {
         let mut deps: Vec<String> = vec![];
 
-        let mut sources: Vec<SourceFile> = vec![];
-        self.add_sourcefile(path, &mut sources)?;
-        let source = sources.pop().unwrap();
+        // let mut sources: Vec<SourceFile> = vec![];
+        // self.add_sourcefile(path, &mut sources)?;
+        // let source = sources.pop().unwrap();
+        let source = std::fs::read_to_string(path)?;
+        let source = self.get_sourcefile(path, source)?;
 
         let entries = source.get_entries();
         for entry in entries {

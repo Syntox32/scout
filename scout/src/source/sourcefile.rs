@@ -3,11 +3,12 @@ use regex::Regex;
 use rustpython_parser::ast::{Program, Suite};
 use rustpython_parser::error::ParseError;
 use rustpython_parser::parser;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use crate::visitors::{CallEntry, CallVisitor, ImportEntry, ImportVisitor, VariableVisitor};
-use crate::{utils, Result};
+use crate::Result;
 
 pub struct ParseErrorFixer {
     attempts: i32,
@@ -68,10 +69,11 @@ impl ParseErrorFixer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SourceFile {
     pub source_path: PathBuf,
     loc: usize,
+    source: String,
 
     pub constants: Vec<String>,
     import_visitor: ImportVisitor,
@@ -122,9 +124,7 @@ impl SourceFile {
         visitor
     }
 
-    pub fn load(path: &PathBuf) -> Result<SourceFile> {
-        let source = utils::load_from_file(&path)?;
-
+    pub fn load(path: &PathBuf, source: String) -> Result<SourceFile> {
         let statements = match SourceFile::get_statements(&source) {
             Ok(statements) => statements,
             Err(err) => {
@@ -153,6 +153,7 @@ impl SourceFile {
         let sf = SourceFile {
             source_path: path.to_owned(),
             loc,
+            source,
             constants: vec![],
             import_visitor,
             call_visitor: function_visitor,
@@ -160,6 +161,10 @@ impl SourceFile {
         };
 
         Ok(sf)
+    }
+
+    pub fn get_source(&self) -> &String {
+        &self.source
     }
 
     pub fn get_loc(&self) -> usize {

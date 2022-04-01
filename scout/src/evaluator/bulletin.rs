@@ -1,5 +1,6 @@
+use crate::visitors::Location;
+
 use super::Functionality;
-use rustpython_parser::location::Location;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

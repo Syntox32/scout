@@ -1,17 +1,17 @@
-use std::{collections::HashMap, hash::Hash, mem};
+use std::{collections::HashMap, mem};
 
 use ast_walker::AstVisitor;
-use rustpython_parser::{
-    ast::{Expression, ExpressionType, Keyword, Located, Operator},
-    location::Location,
-};
+use rustpython_parser::ast::{Expression, ExpressionType, Operator};
+use serde::{Deserialize, Serialize};
 
 use crate::utils::{
-    ast::{do_binop, resolve_binop, try_identifier, try_to_string},
+    ast::{do_binop, try_identifier, try_to_string},
     format_empty_arg,
 };
 
-#[derive(Debug, Clone)]
+use super::Location;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VariableType {
     Identifier(String),
     Str(String),
@@ -50,7 +50,7 @@ impl VariableType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VariableVisitor {
     variables: HashMap<String, VariableType>,
     locations: HashMap<String, Location>,
@@ -134,7 +134,8 @@ impl AstVisitor for VariableVisitor {
         for (t, v) in target.iter().zip(values.into_iter()) {
             if let Some(ident) = try_to_string(t) {
                 self.variables.insert(ident.clone(), v);
-                self.locations.insert(ident, t.location);
+                self.locations
+                    .insert(ident, Location::from_rustpython(t.location));
             }
         }
 
@@ -221,6 +222,6 @@ impl AstVisitor for VariableVisitor {
         self.walk_opt_expression(value);
     }
 
-    fn visit_global(&mut self, names: &Vec<String>) {}
-    fn visit_nonlocal(&mut self, names: &Vec<String>) {}
+    fn visit_global(&mut self, _names: &Vec<String>) {}
+    fn visit_nonlocal(&mut self, _names: &Vec<String>) {}
 }

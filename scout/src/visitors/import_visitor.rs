@@ -3,16 +3,12 @@ use std::hash::{Hash, Hasher};
 
 use ast_walker::AstVisitor;
 use rustpython_parser::ast::{Expression, Suite};
-use rustpython_parser::{
-    ast::{ImportSymbol, Parameters},
-    location::Location,
-};
+use rustpython_parser::ast::{ImportSymbol, Parameters};
+use serde::{Deserialize, Serialize};
 
-use crate::utils::ast::is_identifier;
+use super::{CallEntry, Location, VariableType};
 
-use super::{CallEntry, VariableType};
-
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ImportEntry {
     pub module: String,
     pub symbol: Option<String>,
@@ -39,7 +35,7 @@ impl PartialEq for ImportEntry {
 }
 impl Eq for ImportEntry {}
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct ImportVisitor {
     imports: HashSet<ImportEntry>,
     aliases: HashMap<String, String>,
@@ -174,12 +170,16 @@ impl ImportVisitor {
 impl AstVisitor for ImportVisitor {
     // import os
     // import os.path as awdawd
-    fn visit_import(&mut self, location: &Location, names: &Vec<ImportSymbol>) {
+    fn visit_import(
+        &mut self,
+        location: &rustpython_parser::ast::Location,
+        names: &Vec<ImportSymbol>,
+    ) {
         for name in names {
             let entry = ImportEntry {
                 module: name.symbol.to_string(),
                 symbol: None,
-                location: *location,
+                location: Location::from_rustpython(*location),
                 alias: name.alias.clone(),
                 context: self.get_call_context(),
                 is_dynamic: false, // default
@@ -192,7 +192,7 @@ impl AstVisitor for ImportVisitor {
     // from importlib import import_module as im
     fn visit_import_from(
         &mut self,
-        location: &Location,
+        location: &rustpython_parser::ast::Location,
         _level: &usize,
         module: &Option<String>,
         names: &Vec<ImportSymbol>,
@@ -207,7 +207,7 @@ impl AstVisitor for ImportVisitor {
             let entry = ImportEntry {
                 module: full_name.clone(),
                 symbol: Some(name.symbol.to_string()),
-                location: *location,
+                location: Location::from_rustpython(*location),
                 alias: name.alias.clone(),
                 context: self.get_call_context(),
                 is_dynamic: false, // default
