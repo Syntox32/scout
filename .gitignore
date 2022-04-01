@@ -7,3 +7,4 @@ conf/plot.json
 .vscode/
 flamegraph.svg
 output.txt
+cache.json
