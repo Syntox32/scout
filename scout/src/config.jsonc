@@ -1,0 +1,15 @@
+{
+    "use_cache":    true,
+    "save_cache":   false,
+
+    "fw_functions": 1.0,
+    "fw_imports":   1.0,
+    "fw_behavior":  1.0,
+    "fw_strings":   1.0,
+    
+    "tw_functions": 1.0,
+    "tw_imports":   1.0,
+
+    "feature_tfidf_calls": true,
+    "feature_tfidf_imports": true
+}

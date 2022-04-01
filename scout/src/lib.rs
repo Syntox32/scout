@@ -24,7 +24,7 @@ mod engine {
     use std::{path::PathBuf, str::FromStr};
 
     use crate::evaluator::AnalysisResult;
-    use crate::Result;
+    use crate::{Config, Result};
     use crate::{Package, RuleManager};
 
     pub struct Engine {
@@ -32,6 +32,8 @@ mod engine {
 
         opt_show_all: bool,
         opt_threshold: f64,
+
+        config: Config,
     }
 
     impl<'e> Engine {
@@ -40,7 +42,16 @@ mod engine {
                 rule_path: None,
                 opt_show_all: false,
                 opt_threshold: 0.0,
+                config: Config::new(&None).unwrap(),
             }
+        }
+
+        pub fn set_config_path(mut self, config_path: Option<String>) {
+            self.config = Config::new(&config_path).unwrap();
+        }
+
+        pub fn set_config(mut self, json: String) {
+            self.config = Config::from_str(json).unwrap();
         }
 
         pub fn set_show_all(mut self, show_all: bool) -> Self {
@@ -83,7 +94,13 @@ mod engine {
                 }
             };
 
-            let results = Package::new(pkg, rule_manager, self.opt_threshold, self.opt_show_all)?
+            let results = Package::new(
+                pkg,
+                rule_manager,
+                self.opt_threshold,
+                self.opt_show_all,
+                &self.config,
+            )?
                 .analyse()?;
             Ok(results)
         }
@@ -102,7 +119,13 @@ mod engine {
                 }
             };
 
-            let results = Package::new(path, rule_manager, self.opt_threshold, self.opt_show_all)?
+            let results = Package::new(
+                path,
+                rule_manager,
+                self.opt_threshold,
+                self.opt_show_all,
+                &self.config,
+            )?
                 .analyse_single()?;
             Ok(results)
         }

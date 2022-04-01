@@ -2,7 +2,7 @@ use std::{collections::HashMap, f64::consts::PI, hash::Hash};
 
 use serde::{Deserialize, Serialize};
 
-use crate::evaluator::Hotspot;
+use crate::{evaluator::Hotspot, Config};
 
 fn gaussian_density(x: f64, mu: f64, variance: f64) -> f64 {
     let sigma = variance.sqrt();
@@ -123,12 +123,12 @@ impl DensityEvaluator {
     const VARIANCE: f64 = 5.0;
     const HOTSPOT_THRESHOLD: f64 = 0.01;
 
-    pub fn new(loc: usize) -> Self {
+    pub fn new(loc: usize, config: &Config) -> Self {
         let mut mult_map: HashMap<FieldType, f64> = HashMap::new();
-        mult_map.insert(FieldType::Functions, 1.5);
-        mult_map.insert(FieldType::Imports, 1.0);
-        mult_map.insert(FieldType::Behavior, 1.2);
-        mult_map.insert(FieldType::Strings, 1.0);
+        mult_map.insert(FieldType::Functions, config.fw_functions);
+        mult_map.insert(FieldType::Imports, config.fw_imports);
+        mult_map.insert(FieldType::Behavior, config.fw_behavior);
+        mult_map.insert(FieldType::Strings, config.fw_strings);
 
         let mut fields: HashMap<FieldType, Field> = HashMap::new();
 

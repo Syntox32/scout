@@ -24,6 +24,9 @@ struct Args {
     #[clap(short, long)]
     rules: Option<String>,
 
+    #[clap(long)]
+    config_json: Option<String>,
+
     #[clap(short, long)]
     all: Option<bool>,
 

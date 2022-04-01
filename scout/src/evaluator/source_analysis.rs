@@ -1,11 +1,11 @@
-use crate::{Metadata, SourceFile};
+use crate::{Config, Metadata, SourceFile};
 
 use super::{
     density_evaluator::{DensityEvaluator, Field, FieldType},
     Bulletin, Bulletins, Functionality, Hotspot,
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt,
@@ -114,7 +114,7 @@ impl fmt::Display for AnalysisResult {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SourceAnalysis {
     pub alerts_functions: i32,
     pub alerts_imports: i32,
@@ -140,11 +140,16 @@ impl PartialEq for SourceAnalysis {
 impl Eq for SourceAnalysis {}
 
 impl<'a> SourceAnalysis {
-    pub fn new(source: SourceFile, show_all_override: bool, global_threshold: f64) -> Self {
+    pub fn new(
+        source: SourceFile,
+        show_all_override: bool,
+        global_threshold: f64,
+        config: &Config,
+    ) -> Self {
         Self {
             alerts_functions: 0,
             alerts_imports: 0,
-            density_evaluator: DensityEvaluator::new(source.get_loc()),
+            density_evaluator: DensityEvaluator::new(source.get_loc(), config),
             bulletins: vec![],
             source,
             message: None,

@@ -1,12 +1,8 @@
-use std::collections::HashMap;
-
-use rustpython_parser::location::Location;
-
 use crate::source::SourceFile;
 use crate::visitors::{CallEntry, ImportEntry};
-use crate::{utils, SourceAnalysis};
+use crate::{utils, Config, SourceAnalysis};
 
-use super::canary::{Canaries, CanaryInfo};
+use super::canary::Canaries;
 use super::density_evaluator::FieldType;
 use super::{Bulletin, BulletinReason, Bulletins, DensityEvaluator, Rule, RuleSet};
 
@@ -44,6 +40,7 @@ impl Evaluator {
         de: &mut DensityEvaluator,
         bulletins: &mut Bulletins,
         alerts: &mut i32,
+        config: &Config,
     ) {
         if let Rule::Module(func, ident, _name, _desc) = rule {
             if entry.module.to_string() == *ident {
@@ -62,9 +59,15 @@ impl Evaluator {
                     set.threshold,
                 );
                 bulletins.push(notif);
-                de.add_density(FieldType::Imports, entry.location.row(), multiplier, 0.4f64);
+                de.add_density(
+                    FieldType::Imports,
+                    entry.location.row(),
+                    multiplier,
+                    config.tw_imports,
+                );
                 *alerts += 1;
 
+                // not affected by TFIDF
                 if entry.context == "function" {
                     let notif = Bulletin::new(
                         entry.module.to_string(),
@@ -74,7 +77,12 @@ impl Evaluator {
                         0.3f64,
                     );
                     bulletins.push(notif);
-                    de.add_density(FieldType::Imports, entry.location.row(), 1.0f64, 0.4f64);
+                    de.add_density(
+                        FieldType::Imports,
+                        entry.location.row(),
+                        1.0f64,
+                        config.tw_imports,
+                    );
                     *alerts += 1;
                 }
             }
@@ -90,6 +98,7 @@ impl Evaluator {
         de: &mut DensityEvaluator,
         bulletins: &mut Bulletins,
         alerts: &mut i32,
+        config: &Config,
     ) {
         if let Rule::Function(func, ident, _name, _desc) = rule {
             if utils::get_last_attr(entry.full_identifier.as_str()) == ident {
@@ -120,7 +129,7 @@ impl Evaluator {
                     FieldType::Functions,
                     entry.location.row(),
                     multiplier,
-                    0.2f64,
+                    config.tw_functions,
                 );
                 *alerts += 1;
             }
@@ -134,6 +143,7 @@ impl Evaluator {
         de: &mut DensityEvaluator,
         bulletins: &mut Bulletins,
         alerts: &mut i32,
+        config: &Config,
     ) {
         if entry.is_dynamic {
             let notif = Bulletin::new(
@@ -144,7 +154,12 @@ impl Evaluator {
                 0.2f64,
             );
             bulletins.push(notif);
-            de.add_density(FieldType::Behavior, entry.location.row(), 1.0f64, 0.3f64);
+            de.add_density(
+                FieldType::Behavior,
+                entry.location.row(),
+                1.0f64,
+                config.tw_imports,
+            );
             *alerts += 1;
         }
     }
@@ -155,6 +170,7 @@ impl Evaluator {
         de: &mut DensityEvaluator,
         bulletins: &mut Bulletins,
         alerts: &mut i32,
+        _config: &Config,
     ) {
         let canaries = self.canaries.get_canaries();
         let locations = source.variable_visitor.get_locations();
@@ -171,8 +187,11 @@ impl Evaluator {
 
                             let notif = Bulletin::new(
                                 canary_info.identifier.to_string(),
-                                BulletinReason::Canary(format!("detected '{}' using transform '{}'", canary_info.identifier, canary_info.transform)),
-                                location.to_owned(),
+                                BulletinReason::Canary(format!(
+                                    "detected '{}' using transform '{}'",
+                                    canary_info.identifier, canary_info.transform
+                                )),
+                                location.clone(),
                                 None,
                                 0.2f64,
                             );
@@ -186,12 +205,13 @@ impl Evaluator {
         }
     }
 
-    pub fn evaluate(&self, analysis: &mut SourceAnalysis) {
+    pub fn evaluate(&self, analysis: &mut SourceAnalysis, config: &Config) {
         self.variable_check(
             &analysis.source,
             &mut analysis.density_evaluator,
             &mut analysis.bulletins,
             &mut analysis.alerts_imports,
+            config,
         );
 
         for entry in analysis.source.get_imports() {
@@ -201,6 +221,7 @@ impl Evaluator {
                 &mut analysis.density_evaluator,
                 &mut analysis.bulletins,
                 &mut analysis.alerts_imports,
+                config,
             );
         }
 
@@ -215,6 +236,7 @@ impl Evaluator {
                         &mut analysis.density_evaluator,
                         &mut analysis.bulletins,
                         &mut analysis.alerts_imports,
+                        config,
                     )
                 }
             }
@@ -229,6 +251,7 @@ impl Evaluator {
                         &mut analysis.density_evaluator,
                         &mut analysis.bulletins,
                         &mut analysis.alerts_functions,
+                        config,
                     );
                 }
             }
