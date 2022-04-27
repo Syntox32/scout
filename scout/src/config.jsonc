@@ -1,5 +1,5 @@
 {
-    "use_cache":    true,
+    "use_cache":    false,
     "save_cache":   false,
 
     "fw_functions": 1.0,

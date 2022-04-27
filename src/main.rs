@@ -27,6 +27,9 @@ struct Args {
     #[clap(long)]
     config_json: Option<String>,
 
+    #[clap(long)]
+    config: Option<String>,
+
     #[clap(short, long)]
     all: Option<bool>,
 
@@ -44,10 +47,14 @@ fn main() -> Result<()> {
         warn!("Show all bulletins override is enabled.");
     }
 
-    let engine = Engine::new()
+    let mut engine = Engine::new()
         .set_show_all(show_all_override)
         .set_threshold(args.threshold.unwrap_or(0f64))
         .set_rule_path(args.rules);
+
+    if let Some(config_json) = args.config_json {
+        engine.set_config(config_json);
+    }
 
     match args.file {
         Some(path) => match engine.analyse_file(path.as_str()) {
@@ -84,7 +91,10 @@ fn main() -> Result<()> {
                         Ok(())
                     }
                 },
-                Err(err) => Err(format!("Failed to analyse package: {}", err.to_string()).into()),
+                Err(err) => {
+                    info!("error debugging re {:?}", err);
+                    Err(format!("Failed to analyse package: {}", err.to_string()).into())
+                }
             },
             None => {
                 // TODO: Rewrite this to use the clap App functionality so we can control required arguments.

@@ -46,11 +46,11 @@ mod engine {
             }
         }
 
-        pub fn set_config_path(mut self, config_path: Option<String>) {
+        pub fn set_config_path(&mut self, config_path: Option<String>) {
             self.config = Config::new(&config_path).unwrap();
         }
 
-        pub fn set_config(mut self, json: String) {
+        pub fn set_config(&mut self, json: String) {
             self.config = Config::from_str(json).unwrap();
         }
 
