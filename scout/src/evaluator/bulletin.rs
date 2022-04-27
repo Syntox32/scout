@@ -4,12 +4,13 @@ use super::Functionality;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "reason")]
+#[serde(tag = "reason", content = "msg")]
 pub enum BulletinReason {
     SuspiciousImport,
     SuspiciousFunction,
     ImportInsideFunction,
     DynamicImport,
+    #[serde(rename = "canary")]
     Canary(String),
 }
 
