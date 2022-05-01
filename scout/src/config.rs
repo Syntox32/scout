@@ -11,13 +11,13 @@ pub struct Config {
     pub use_cache: bool,
     pub save_cache: bool,
 
-    /// Field weight for functions
+    /// Weight for functions field
     pub fw_functions: f64,
-    /// Field weight for imports
+    /// Weight for imports field
     pub fw_imports: f64,
-    /// Field weight for behavior
+    /// Weight for behavior field
     pub fw_behavior: f64,
-    /// Field weight for strings
+    /// Weight for strings field
     pub fw_strings: f64,
 
     /// TFIDF weight for functions
