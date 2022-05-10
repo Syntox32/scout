@@ -53,10 +53,8 @@ impl Field {
 
     fn add_density(&mut self, line: f64, variance: f64, tfidf_multiplier: f64, tfidf_weight: f64) {
         for (y, x) in self.y.iter_mut().zip(self.x.iter()) {
-            *y += gaussian_density(*x, line, variance);
-            *y *= self.multiplier;
+            *y += gaussian_density(*x, line, variance) * self.multiplier;
             *y *= Field::tfidf_weight(tfidf_multiplier, tfidf_weight);
-            // println!("{}", val);
         }
     }
 
