@@ -4,8 +4,10 @@
 ///     ```
 ///     Module(Functionality, Identifier, Name (optional), Description (optional))
 ///     ```
-///
 /// You can choose between Module or Function.
+///
+/// `Name` and `Description` is currently not used and can be safely set to `None`.
+///
 ///
 ([
     ( name: "Basic module rules", threshold: 0.30, rules: [
