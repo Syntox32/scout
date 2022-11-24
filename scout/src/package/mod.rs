@@ -243,7 +243,7 @@ impl<'cfg> Package<'cfg> {
                     .iter()
                     .filter(|&(_, im_lookup)| im_lookup.contains_key(&im))
                     .count() as f64;
-                let tf = self.calc_df(count_sources, sources_with_im);
+                let tf = self.calc_idf(count_sources, sources_with_im);
                 let tfidf: f64 = freq * tf;
 
                 debug!(
@@ -256,13 +256,13 @@ impl<'cfg> Package<'cfg> {
         }
     }
 
-    fn calc_df(&self, num_cases: f64, cases_with_term: f64) -> f64 {
-        cases_with_term / num_cases
-    }
-
-    // fn calc_idf(&self, num_cases: f64, cases_with_term: f64) -> f64 {
-    //     (num_cases / cases_with_term).ln()
+    // fn calc_df(&self, num_cases: f64, cases_with_term: f64) -> f64 {
+    //     cases_with_term / num_cases
     // }
+
+    fn calc_idf(&self, num_cases: f64, cases_with_term: f64) -> f64 {
+        (num_cases / cases_with_term).ln()
+    }
 
     // fn calc_idf_smooth(&self, num_cases: f64, cases_with_term: f64) -> f64 {
     //     (num_cases / (1.0f64 + cases_with_term)).ln() + 1.0f64
@@ -295,7 +295,7 @@ impl<'cfg> Package<'cfg> {
                     .filter(|&(_, call_lookup)| call_lookup.contains_key(&call))
                     .count() as f64;
                 // let idf: f64 = self.calc_idf(count_sources, sources_with_call);
-                let idf: f64 = self.calc_df(count_sources, sources_with_call);
+                let idf: f64 = self.calc_idf(count_sources, sources_with_call);
                 let tfidf: f64 = freq * idf;
 
                 debug!(
