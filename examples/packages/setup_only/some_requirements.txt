@@ -1,0 +1,3 @@
+# this is a requirements file
+package-test
+package-xyz >= 13.3.7

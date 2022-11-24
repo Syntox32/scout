@@ -1,0 +1,4 @@
+Metadata-Version: 2.1
+Name: numpy
+Version: 1.22.3
+Summary: test package info using some metadata from numpy's package
